@@ -1,0 +1,26 @@
+{
+  "READ": [
+    "What were our total sales numbers for last quarter?",
+    "Find all active users who registered within the last 30 days.",
+    "Show me the order history and tracking info for customer #1234.",
+    "What is the current inventory stock level for SKU-4029?",
+    "Look up John Doe's email address and contact details in the directory.",
+    "Fetch the list of pending payment invoices awaiting approval."
+  ],
+  "WRITE": [
+    "Add a new customer named Jane Doe with email jane@example.com to the system.",
+    "Update the inventory quantity for SKU-4029 from 10 to 45 units.",
+    "Delete the draft invoice #402 from the database immediately.",
+    "Insert a new transaction record of $150.00 for user 8831.",
+    "Change John's primary shipping address to 123 Main Street, Suite 4B.",
+    "Create a new urgent support ticket regarding the payment gateway timeout."
+  ],
+  "GENERAL_CHAT": [
+    "Hello! How are you doing today?",
+    "Can you write a short poem about autumn leaves and rain?",
+    "Tell me an interesting fun fact about the solar system.",
+    "Who was the first person to walk on the moon?",
+    "What is the difference between supervised and unsupervised learning?",
+    "Thank you so much for your assistance, that was very helpful!"
+  ]
+}
