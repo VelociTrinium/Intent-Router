@@ -1,220 +1,184 @@
 # Intent Router
 
-A production-grade, low-latency intent router microservice designed for multi-agent LLM systems. Routes incoming user requests to the appropriate processing pipeline (`READ`, `WRITE`, or `GENERAL_CHAT`) using a few-shot SetFit classifier, a fast TF-IDF baseline, or an Ollama local LLM backend.
+A low-latency, 3-class NLP intent router designed to classify incoming user prompts (single-turn or multi-turn with `chat_history`) into downstream execution pipelines: **`GENERAL_CHAT`**, **`DB_READ`**, or **`DB_WRITE`**.
+
+The primary deployment artifact is a **fine-tuned `Qwen2.5-0.5B-Instruct` (`Q8_0` GGUF, ~531 MB) model running natively in Ollama as `intent-router`**, outputting a single token (`CHAT`, `READ`, or `WRITE`) with exact `logprobs`-calibrated guardrails. A FastAPI microservice (`app/main.py`) and zero-dependency standalone Python client (`app/ollama_client.py`) are both included, alongside SetFit and TF-IDF benchmark backends.
 
 ---
 
 ## Architecture & Project Structure
 
-```
+```text
 intent-router/
-├── .env                          # Put GEMINI_API_KEY=... and HF_TOKEN=... here (gitignored)
+├── .env                          # Credentials & runtime config (gitignored)
 ├── .env.example                  # Committed template showing required env vars
-├── .gitignore                    # Ignore .env, venv/, __pycache__/, models/, data/processed/
-├── pyproject.toml                # Dependencies & project metadata
-├── requirements.txt              # Standard pip dependencies
-├── README.md                     # Setup, pipeline commands, and API usage
+├── .gitignore
+├── pyproject.toml
+├── requirements.txt
+├── README.md
 ├── data/
-│   ├── seed_prompts.json         # 5–6 hand-written seed examples per class
-│   ├── raw/                      # Gemini-generated synthetic prompts before human review
-│   ├── review_queue/             # Borderline/uncertain prompts flagged for your CLI check
-│   └── processed/                # Final deduplicated train.jsonl, val.jsonl, test.jsonl
+│   ├── custom/                   # Your curated JSON/JSONL working examples (working_examples.json)
+│   ├── seed_prompts.json         # Hand-written single-turn seed examples per class
+│   ├── raw/                      # Gemini-generated synthetic prompts & verified reviews
+│   ├── review_queue/             # Borderline prompts flagged for human review
+│   └── processed/                # Deduplicated stratified train.jsonl, val.jsonl, test.jsonl
 ├── models/
-│   ├── baseline_tfidf/           # Saved scikit-learn TF-IDF + LogisticRegression artifact
-│   └── intent_router/            # Saved SetFit model weights, config, and label_map.json
+│   ├── hf_base/                  # Downloaded base HuggingFace weights (gitignored)
+│   ├── ollama_lora/              # Best LoRA adapter checkpoint (gitignored)
+│   ├── ollama_merged/            # Merged FP32 HuggingFace weights (gitignored)
+│   ├── ollama_gguf/              # Exported Q8_0 GGUF + Ollama Modelfile (gitignored)
+│   ├── intent_router/            # SetFit benchmark artifacts
+│   ├── baseline_tfidf/           # TF-IDF + LogisticRegression benchmark artifact
+│   └── evaluation_report.json    # Side-by-side test metrics, confusion matrices, latency
 ├── scripts/
-│   ├── __init__.py
-│   ├── generate_data.py          # Calls Gemini API using seed_prompts.json -> data/raw/
-│   ├── review_uncertain.py       # Interactive CLI for you to verify uncertain labels
-│   ├── train_baseline.py         # Trains TF-IDF + LogisticRegression benchmark
-│   ├── train_setfit.py           # Trains SetFit model + optional --push-to-hub flag
-│   └── evaluate.py               # Outputs Precision/Recall/F1, 3x3 confusion matrix, latency
+│   ├── build_dataset.py          # Validates data/custom/ + merges/splits train/val/test JSONL
+│   ├── retrain_pipeline.py       # End-to-end orchestrator: custom data -> fresh model -> Ollama -> eval
+│   ├── generate_data.py          # Gemini structured output generator (single + multi-turn)
+│   ├── review_uncertain.py       # Interactive HITL CLI for reviewing borderline prompts
+│   ├── train.py                  # Unified trainer (--backend ollama | setfit | baseline)
+│   ├── train_ollama.py           # CPU/GPU LoRA trainer for Qwen2.5-0.5B-Instruct (1-token)
+│   ├── export_ollama_gguf.py     # Converts merged weights to Q8_0 GGUF & creates Ollama model
+│   ├── train_setfit.py           # SetFit contrastive benchmark trainer
+│   ├── train_baseline.py         # TF-IDF + LogisticRegression benchmark trainer
+│   └── evaluate.py               # Benchmarks accuracy, Macro F1, DB_WRITE recall, latency
 ├── app/
-│   ├── __init__.py
-│   ├── config.py                 # Thresholds (CONFIDENCE_THRESHOLD=0.60, WRITE_THRESHOLD=0.40) & backend toggle
-│   ├── schemas.py                # Pydantic request/response models (prompt + optional chat_history)
-│   ├── router_engine.py          # Unified interface switching between SetFitRouter and OllamaRouter
-│   └── main.py                   # FastAPI entrypoint exposing POST /route and GET /health
+│   ├── intent_spec.py            # Canonical system prompt, token map, logprobs extractor, loaders
+│   ├── config.py                 # Thresholds (CONFIDENCE_THRESHOLD=0.60, WRITE_THRESHOLD=0.40)
+│   ├── schemas.py                # Pydantic request/response schemas (prompt + optional chat_history)
+│   ├── router_engine.py          # Unified engine (OllamaRouter, SetFitRouter, BaselineRouter)
+│   ├── ollama_client.py          # Zero-dependency standalone client for external Python projects
+│   └── main.py                   # FastAPI service exposing POST /route and GET /health
 └── tests/
-    ├── __init__.py
-    ├── test_routing_rules.py     # Unit tests for fallback-to-GENERAL_CHAT and write-threshold logic
-    └── test_api.py               # FastAPI TestClient checks for /route
+    ├── test_routing_rules.py     # Unit tests for guardrails, chat_history, and logprobs extraction
+    └── test_api.py               # FastAPI TestClient & standalone client tests
 ```
 
 ---
 
-## Intent Classes & Routing Logic
+## Intent Classes & Guardrail Rules
 
 ### Intent Classes
-1. **`READ`**: Retrieval, lookups, query requests, data inspection, and read-only searches.
-2. **`WRITE`**: Mutations, creation, updates, deletes, and action execution.
-3. **`GENERAL_CHAT`**: Conversational chit-chat, greetings, open-ended questions, and fallback.
+1. **`GENERAL_CHAT`** (model token: `CHAT`): Greetings, conceptual/SQL syntax questions, architecture advice, and drafting text/emails without saving to the database.
+2. **`DB_READ`** (model token: `READ`): Fetching, searching, filtering, counting, aggregating, or inspecting live, deleted, or audit database records.
+3. **`DB_WRITE`** (model token: `WRITE`): Creating, inserting, updating, deleting, logging calls/notes, scheduling meetings, polite/indirect write commands (`"Can you delete..."`), and **mixed READ+WRITE** compound prompts.
 
-### Decision Rules
-- **Write Sensitivity Rule**: If `probability(WRITE) >= WRITE_THRESHOLD` (default: `0.40`), the request is routed to `WRITE` immediately. Mutating actions carry high risk/importance, so a dedicated threshold prevents accidental misrouting to chat or read.
-- **Confidence Fallback Rule**: If the highest predicted probability is `< CONFIDENCE_THRESHOLD` (default: `0.60`), the system safely falls back to `GENERAL_CHAT`.
-- **Primary Prediction Rule**: Otherwise, routes to the intent with the highest probability.
+### Decision Guardrails (`WRITE_THRESHOLD=0.40`, `CONFIDENCE_THRESHOLD=0.60`)
+1. **Write Sensitivity Rule**: If `P(DB_WRITE) >= 0.40`, route to `DB_WRITE` immediately so mutations are never dropped silently.
+2. **Confidence Fallback Rule**: Otherwise, if `max(P) < 0.60`, fall back safely to `GENERAL_CHAT`.
+3. **Primary Prediction Rule**: Otherwise, route to the highest-probability class.
 
 ---
 
 ## Quickstart & Setup
 
-### 1. Environment Setup
-
 ```bash
-cd intent-router
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+# source .venv/bin/activate # Linux/macOS
 
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-# Or with editable install:
-pip install -e .
-```
-
-### 2. Configure Environment Variables
-
-```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set your credentials:
+Set `GEMINI_API_KEY` in `.env` for synthetic dataset generation. Default runtime settings:
 ```ini
-GEMINI_API_KEY=your_gemini_api_key_here
-HF_TOKEN=your_huggingface_token_here
-ROUTER_BACKEND=setfit
+ROUTER_BACKEND=ollama
 CONFIDENCE_THRESHOLD=0.60
 WRITE_THRESHOLD=0.40
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=intent-router
+OLLAMA_MODE=single_token
 ```
 
 ---
 
-## Data Pipeline & Model Training
+## End-to-End Training & Ollama Export Pipeline
 
-### Step 1: Generate Synthetic Data
-Generates realistic variations across all 3 classes from `data/seed_prompts.json` using the Google Gemini API:
+### 1. Generate Single-Turn & Multi-Turn Dataset
 ```bash
-python scripts/generate_data.py --samples-per-class 30
-```
-- Raw prompts are saved in `data/raw/synthetic_prompts.json`.
-- Borderline/uncertain examples are automatically routed to `data/review_queue/`.
-- Clean splits are written to `data/processed/train.jsonl`, `val.jsonl`, and `test.jsonl`.
-
-### Step 2: Interactive Human-in-the-Loop Review
-Review borderline or uncertain prompts via the CLI:
-```bash
+python scripts/generate_data.py --target-total 810 --strict-api
 python scripts/review_uncertain.py
 ```
-Options in the CLI:
-- `[1]` Keep proposed label
-- `[2]` Re-label as READ
-- `[3]` Re-label as WRITE
-- `[4]` Re-label as GENERAL_CHAT
-- `[d]` Discard prompt
-- `[s]` Skip
+Outputs stratified splits (`75%` train, `10%` val, `15%` test) with optional `chat_history` in `data/processed/`.
 
-### Step 3: Train Baseline Benchmark (TF-IDF + Logistic Regression)
+### 2. Fine-Tune `Qwen2.5-0.5B-Instruct` with LoRA
 ```bash
-python scripts/train_baseline.py
+python scripts/train.py --backend ollama --epochs 2 --batch-size 8 --grad-accum 2 --lr 3e-4
 ```
-Saves artifacts to `models/baseline_tfidf/`.
+Saves the best LoRA checkpoint to `models/ollama_lora/` and merges weights to `models/ollama_merged/`.
 
-### Step 4: Train SetFit Classifier
-Trains the few-shot sentence transformer SetFit model:
+### 3. Export to `Q8_0` GGUF & Register in Ollama
 ```bash
-python scripts/train_setfit.py --model-id sentence-transformers/all-MiniLM-L6-v2 --epochs 2
+python scripts/export_ollama_gguf.py --outtype q8_0 --model-name intent-router
 ```
-To push to the Hugging Face Hub:
-```bash
-python scripts/train_setfit.py --push-to-hub --repo-id your-org/intent-router
-```
-Saves artifacts and label mapping to `models/intent_router/`.
+Produces `models/ollama_gguf/intent-router-q8_0.gguf` (~525 MB on disk, ~531 MB in Ollama) and `models/ollama_gguf/Modelfile` with baked-in system prompt, ChatML template, `temperature 0`, and `num_predict 1`, then runs `ollama create intent-router`.
 
-### Step 5: Evaluate Models
-Evaluates against the held-out `data/processed/test.jsonl` set:
-```bash
-# Evaluate SetFit
-python scripts/evaluate.py --backend setfit
+### 4. Adding Custom Working Data & Retraining From a Fresh Base Model
 
-# Evaluate Baseline
-python scripts/evaluate.py --backend baseline
+Drop your own classified prompts into [`data/custom/working_examples.json`](data/custom/working_examples.json) and run the full pipeline (data validation/merge -> fresh base model LoRA training -> `Q8_0` GGUF export -> Ollama registration -> quality-gate evaluation):
+
+```bash
+# Preview split & validate custom JSON
+python scripts/retrain_pipeline.py --dry-run
+
+# Retrain fresh base model and publish to Ollama
+python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router
 ```
-Outputs:
-- Inference Latency metrics (mean, p50, p95)
-- Per-class Precision, Recall, and F1-score
-- Complete 3x3 Confusion Matrix
+
+See **[PIPELINE.md](PIPELINE.md)** and **[data/custom/README.md](data/custom/README.md)** for full JSON schemas, `--custom-only`, `--custom-train-repeat`, candidate tags, and swapping base models.
+
+### 5. Train Benchmark Models & Evaluate All Backends
+```bash
+python scripts/train.py --backend baseline
+python scripts/train.py --backend setfit --num-iterations 2 --epochs 1
+python scripts/evaluate.py --backend all --compare-untuned-ollama qwen2.5:0.5b
+```
 
 ---
 
-## Running the FastAPI Microservice
+## Benchmark Results (126 Held-Out Test Prompts, CPU-Only Windows)
 
-Start the API server:
+Measured on `data/processed/test.jsonl` (`42` samples per class, including `33` multi-turn `chat_history` follow-ups) with `WRITE_THRESHOLD=0.40` and `CONFIDENCE_THRESHOLD=0.60`:
+
+| Backend | Guarded Acc | Macro F1 | `DB_WRITE` Recall | Multi-Turn Acc | Mean Latency (CPU) | P95 Latency | Errors |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **`intent-router` (`Qwen2.5-0.5B` LoRA `Q8_0` in Ollama)** | **98.4%** | **0.9841** | **100.0%** | **97.0%** | **523.28 ms** | **698.12 ms** | **2 / 126** |
+| SetFit (`BAAI/bge-small-en-v1.5`) | 89.7% | 0.8962 | 95.2% | 69.7% | 16.12 ms | 24.76 ms | 13 / 126 |
+| TF-IDF + LogisticRegression | 75.4% | 0.7299 | 90.5% | 63.6% | 0.52 ms | 0.90 ms | 31 / 126 |
+| Untuned `qwen2.5:3b` (zero-shot) | 70.6% | 0.6566 | 97.6% | 66.7% | 1120.30 ms | 2019.21 ms | 37 / 126 |
+| Untuned `qwen2.5:0.5b` (zero-shot) | 38.1% | 0.2988 | 90.5% | 51.5% | 598.42 ms | 858.94 ms | 78 / 126 |
+
+---
+
+## Using `intent-router` in Your Separate Project
+
+### Option A: Zero-Dependency Direct Ollama Client (Recommended)
+Copy [`app/ollama_client.py`](app/ollama_client.py) into your project (uses only Python stdlib `urllib.request`, `json`, `math`, `time`). It calls `http://127.0.0.1:11434/api/chat` with `logprobs: True, top_logprobs: 20, num_predict: 1` and enforces `WRITE_THRESHOLD=0.40` and `CONFIDENCE_THRESHOLD=0.60`:
+
+```python
+from app.ollama_client import classify_intent
+
+result = classify_intent(
+    prompt="Actually just show them first, don't delete anything yet.",
+    chat_history=[
+        {"role": "user", "content": "Find all inactive leads from 2024 and delete them."},
+        {"role": "assistant", "content": "I found 14 inactive leads. Should I proceed with deletion?"},
+    ],
+)
+# -> {"route": "DB_READ", "confidence": ..., "probabilities": {...}, "fallback_triggered": False, ...}
+```
+
+### Option B: FastAPI Microservice
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-
-Interactive documentation is available at `http://localhost:8000/docs`.
-
-### API Endpoints
-
-#### 1. Health Check: `GET /health`
-```bash
-curl -X GET http://localhost:8000/health
-```
-Response:
-```json
-{
-  "status": "healthy",
-  "backend": "setfit",
-  "model_loaded": true,
-  "confidence_threshold": 0.6,
-  "write_threshold": 0.4
-}
-```
-
-#### 2. Route Intent: `POST /route`
-```bash
-curl -X POST http://localhost:8000/route \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Can you delete order #4912 from the database?",
-    "chat_history": []
-  }'
-```
-Response:
-```json
-{
-  "intent": "WRITE",
-  "confidence": 0.942,
-  "raw_intent": "WRITE",
-  "probabilities": {
-    "READ": 0.031,
-    "WRITE": 0.942,
-    "GENERAL_CHAT": 0.027
-  },
-  "backend": "setfit",
-  "routed_by_rule": "write_threshold_triggered",
-  "latency_ms": 11.45
-}
-```
+- `GET /health`: returns active backend (`ollama`), readiness (`model_loaded`), and threshold configuration.
+- `POST /route`: accepts `{"prompt": "...", "chat_history": [...]}` and returns `route`, `raw_prediction`, `confidence`, `probabilities`, `fallback_triggered`, `backend`, and `latency_ms`.
 
 ---
 
 ## Testing
 
-Run unit tests and API integration tests:
 ```bash
 pytest -v
 ```
-Tests cover:
-- Confidence threshold fallback to `GENERAL_CHAT`
-- `WRITE_THRESHOLD=0.40` prioritization logic
-- Conversational chat history context handling
-- FastAPI `/health` and `/route` endpoint responses and status codes

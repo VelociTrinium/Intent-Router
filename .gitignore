@@ -25,6 +25,10 @@ models/baseline_tfidf/*
 !models/baseline_tfidf/.gitkeep
 models/intent_router/*
 !models/intent_router/.gitkeep
+models/hf_base/
+models/ollama_lora/
+models/ollama_merged/
+models/ollama_gguf/
 
 # Processed and generated data
 data/processed/*
@@ -46,3 +50,5 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+checkpoints/
+scripts/vendor/

@@ -1,20 +1,37 @@
 """
-FastAPI entrypoint exposing:
-- GET /health: Healthcheck, active backend, model status, and threshold config
-- POST /route: Intent classification routing endpoint
+FastAPI service exposing production endpoints for 3-class Intent Router:
+- GET /health: Service readiness, active backend, and threshold configuration
+- POST /route: Fast intent routing endpoint with safety guardrails & probabilities
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.schemas import RouteRequest, RouteResponse, HealthResponse
+from app.schemas import RouteRequest, RouteResponse, HealthResponse, VALID_ROUTES
 from app.router_engine import RouterEngine
 
+# Global router engine instance
+engine: RouterEngine = None  # type: ignore
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global engine
+    if engine is None:
+        engine = RouterEngine()
+    yield
+
+
 app = FastAPI(
-    title="Intent Router Microservice",
-    description="Low-latency multi-backend intent routing API for LLM agents.",
-    version="0.1.0"
+    title="3-Class NLP Intent Router",
+    description=(
+        "Production-grade intent classification router classifying user prompts into "
+        "GENERAL_CHAT, DB_READ, or DB_WRITE with calibrated probabilities and safety guardrails."
+    ),
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -25,37 +42,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global router engine instance
-engine = RouterEngine()
-
 
 @app.get("/health", response_model=HealthResponse, tags=["Monitoring"])
 def health():
-    """Healthcheck endpoint returning server status and model readiness."""
+    """Returns server status, active backend readiness, and routing thresholds."""
+    global engine
+    if engine is None:
+        engine = RouterEngine()
+
     return HealthResponse(
         status="healthy",
-        backend=settings.ROUTER_BACKEND,
+        backend=engine.backend_name,
         model_loaded=engine.router.is_ready(),
         confidence_threshold=settings.CONFIDENCE_THRESHOLD,
-        write_threshold=settings.WRITE_THRESHOLD
+        write_threshold=settings.WRITE_THRESHOLD,
+        classes=VALID_ROUTES
     )
 
 
 @app.post("/route", response_model=RouteResponse, tags=["Routing"])
-def route_intent(request: RouteRequest):
+def route_prompt(request: RouteRequest):
     """
-    Classifies and routes user query into READ, WRITE, or GENERAL_CHAT,
-    applying safety thresholds and fallback mechanisms.
+    Classifies a user prompt into GENERAL_CHAT, DB_READ, or DB_WRITE.
+    Applies write sensitivity guardrail and confidence fallback rules.
     """
-    if not request.prompt.strip():
+    global engine
+    if engine is None:
+        engine = RouterEngine()
+
+    cleaned_prompt = request.prompt.strip()
+    if not cleaned_prompt:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Prompt cannot be empty or whitespace only."
         )
 
     try:
         response = engine.route(
-            prompt=request.prompt,
+            prompt=cleaned_prompt,
             chat_history=request.chat_history
         )
         return response

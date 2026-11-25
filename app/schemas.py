@@ -1,65 +1,51 @@
 """
-Pydantic request and response schemas for intent routing API.
+Pydantic request and response schemas for 3-class NLP intent routing API.
+Classes:
+- GENERAL_CHAT: General conversation, conceptual questions, syntax help, hypothetical discussions.
+- DB_READ: Fetch, search, filter, count, aggregate, or inspect live records/schema.
+- DB_WRITE: Insert, update, delete, modify, or mutate records/state in a database.
 """
 
-from typing import List, Optional, Dict, Literal
+from typing import List, Optional, Dict, Any, Literal
+from pydantic import BaseModel, Field
 
-try:
-    from pydantic import BaseModel, Field
-    HAS_PYDANTIC = True
-except ImportError:
-    HAS_PYDANTIC = False
+RouteName = Literal["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
+IntentType = RouteName  # Backward-compatibility alias
 
-    class BaseModel:  # type: ignore
-        def __init__(self, **kwargs):
-            for k, v in kwargs.items():
-                setattr(self, k, v)
-
-        def dict(self):
-            return self.__dict__
-
-        def model_dump(self):
-            return self.__dict__
-
-    def Field(*args, **kwargs):  # type: ignore
-        return kwargs.get("default", None)
-
-IntentType = Literal["READ", "WRITE", "GENERAL_CHAT"]
-
-
-class ChatMessage(BaseModel):
-    role: str = Field(..., description="Role of message author (e.g., 'user', 'assistant', 'system')")
-    content: str = Field(..., description="Message text content")
+VALID_ROUTES: List[RouteName] = ["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
 
 
 class RouteRequest(BaseModel):
-    prompt: str = Field(..., min_length=1, description="Incoming user query to route")
-    chat_history: Optional[List[ChatMessage]] = Field(
+    prompt: str = Field(..., min_length=1, description="Incoming English user prompt to route")
+    chat_history: Optional[List[Dict[str, Any]]] = Field(
         default=None,
-        description="Optional preceding conversation turns for contextual intent routing"
+        description="Optional preceding conversation turns for future multi-turn support"
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "prompt": "Can you delete order #4912 from the database?",
-                "chat_history": [
-                    {"role": "user", "content": "Hello, I made a mistake on my last order."},
-                    {"role": "assistant", "content": "I can help with that. What order was it?"}
-                ]
+                "prompt": "Show me all active pursuits with deal value greater than $1,000,000.",
+                "chat_history": []
             }
         }
     }
 
 
 class RouteResponse(BaseModel):
-    intent: IntentType = Field(..., description="Final routed intent decision")
-    confidence: float = Field(..., description="Confidence score associated with the final routing decision")
-    raw_intent: str = Field(..., description="Raw top intent predicted by the underlying model before threshold rules")
-    probabilities: Dict[str, float] = Field(..., description="Class probability distribution across READ, WRITE, GENERAL_CHAT")
-    backend: str = Field(..., description="Name of backend used (setfit, baseline, or ollama)")
-    routed_by_rule: str = Field(..., description="Explanation of which rule governed the decision")
-    latency_ms: float = Field(..., description="Inference latency in milliseconds")
+    route: RouteName = Field(..., description="Final routed classification decision")
+    raw_prediction: RouteName = Field(..., description="Raw top prediction from underlying model before guardrails")
+    confidence: float = Field(..., description="Confidence score associated with the routing decision")
+    probabilities: Dict[str, float] = Field(
+        ...,
+        description="Probability distribution across GENERAL_CHAT, DB_READ, and DB_WRITE"
+    )
+    fallback_triggered: bool = Field(
+        default=False,
+        description="True if confidence fallback or safety guardrail overrode the raw prediction"
+    )
+    backend: Optional[str] = Field(default=None, description="Classifier backend used (setfit, baseline, or ollama)")
+    latency_ms: Optional[float] = Field(default=None, description="Inference latency in milliseconds")
 
 
 class HealthResponse(BaseModel):
@@ -68,3 +54,4 @@ class HealthResponse(BaseModel):
     model_loaded: bool
     confidence_threshold: float
     write_threshold: float
+    classes: List[str]

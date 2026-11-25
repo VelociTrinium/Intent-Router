@@ -1,26 +1,49 @@
 {
-  "READ": [
-    "What were our total sales numbers for last quarter?",
-    "Find all active users who registered within the last 30 days.",
-    "Show me the order history and tracking info for customer #1234.",
-    "What is the current inventory stock level for SKU-4029?",
-    "Look up John Doe's email address and contact details in the directory.",
-    "Fetch the list of pending payment invoices awaiting approval."
-  ],
-  "WRITE": [
-    "Add a new customer named Jane Doe with email jane@example.com to the system.",
-    "Update the inventory quantity for SKU-4029 from 10 to 45 units.",
-    "Delete the draft invoice #402 from the database immediately.",
-    "Insert a new transaction record of $150.00 for user 8831.",
-    "Change John's primary shipping address to 123 Main Street, Suite 4B.",
-    "Create a new urgent support ticket regarding the payment gateway timeout."
-  ],
   "GENERAL_CHAT": [
-    "Hello! How are you doing today?",
-    "Can you write a short poem about autumn leaves and rain?",
-    "Tell me an interesting fun fact about the solar system.",
-    "Who was the first person to walk on the moon?",
-    "What is the difference between supervised and unsupervised learning?",
-    "Thank you so much for your assistance, that was very helpful!"
+    "what is the time and date of today?",
+    "How does indexing speed up a SELECT query?",
+    "Write me an example SQL query to update a user's email",
+    "Hello Mira, what can you help me with today?",
+    "Explain how to create a company and link contacts to it.",
+    "What is the difference between a Lead and a Pursuit in ReConnect?",
+    "What does Grade A commercial office classification mean?",
+    "Can you draft a polite follow-up email template for a commercial tenant?",
+    "Please note our Mumbai office will remain closed this Friday on account of a public holiday.",
+    "Application for an internship position in the real estate research team.",
+    "How do I delete row 42 from the clients table?",
+    "Can you write a sample SQL script to archive inactive contacts?"
+  ],
+  "DB_READ": [
+    "List all companies in China.",
+    "Show details of Dow Chemical.",
+    "Find company ID of Nestle.",
+    "What is the website of Dow Chemical?",
+    "show all account managers of Microsoft",
+    "all data.",
+    "Show me all active pursuits with deal value greater than $1,000,000.",
+    "How many commercial properties do we have listed in BKC, Mumbai?",
+    "List all calls and meetings logged for HSBC in the last 30 days.",
+    "Find the primary contact person and email address for Orion Financial Services.",
+    "What was our total closed deal volume by service line this quarter?",
+    "Show all properties with vacant usable area greater than 20,000 sq ft in Central Hong Kong.",
+    "Which accounts are currently assigned to broker user ID 7559?",
+    "Show top 5 clients by estimated annual fee pipeline.",
+    "Show deleted rows from the archive table.",
+    "Inspect recent changes logged for pursuit #8436."
+  ],
+  "DB_WRITE": [
+    "Create a new company called Apex Digital Solutions in India and assign it to me.",
+    "Add BlueWave Technologies from Singapore to the CRM under my account.",
+    "Add Rahul Mehta as a contact at Microsoft with email rahul.mehta@microsoft.com and mobile +91 98201 45678.",
+    "Update Kevin Sauer's mobile number at Microsoft to +1 214 555 8721.",
+    "Log a call with Microsoft today regarding their 25,000 sq ft office expansion in Hong Kong.",
+    "Schedule a meeting with Sarah Wong from HSBC for next Monday at 2 PM to discuss commercial terms.",
+    "Create a lead for Amazon: David Miller (david.miller@amazon.com) is looking for 50,000 sq ft office space in Bengaluru.",
+    "Create a pursuit for Microsoft's Hong Kong office requirement with deal value $2,500,000.",
+    "Mark activity #843690 as completed with notes: 'Client signed engagement letter'.",
+    "Register a new commercial property: Unit 402, Trade Center, BKC, Mumbai for office usage.",
+    "I received an enquiry from Anna Schmidt at EuroTech GmbH. Create the company and Anna's contact (anna.schmidt@eurotech.de).",
+    "Can you delete row 42 from the staging leads table?",
+    "Find HSBC's primary contact and update their phone number to +1 555 0192."
   ]
 }

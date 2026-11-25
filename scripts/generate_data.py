@@ -1,42 +1,35 @@
 """
-Synthetic data generation pipeline using Google Gemini API.
-Reads seed_prompts.json, generates synthetic variations per class,
-flags borderline/ambiguous samples to review_queue/, and writes
-deduplicated train/val/test splits to data/processed/.
+Seed-Guided Synthetic Data Generator.
+Uses the official google-genai SDK with Structured Outputs to generate
+a balanced, high-diversity dataset (single-turn + multi-turn chat_history)
+from data/seed_prompts.json.
+
+Boundary rules enforced:
+  - "How do I delete a row?" / drafting emails without DB save -> GENERAL_CHAT
+  - "Show deleted rows" / inspect audit logs -> DB_READ
+  - "Delete row 42" / "Can you delete row 42?" / mixed READ+WRITE -> DB_WRITE
+
+Deduplicates cleanly across (chat_history, prompt) and stratifies splits by
+(label, is_multi_turn) into:
+  - 75% data/processed/train.jsonl
+  - 10% data/processed/val.jsonl
+  - 15% data/processed/test.jsonl
 """
 
 import os
 import json
+import time
 import random
 import argparse
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Literal
+from pydantic import BaseModel, Field
 
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    def load_dotenv():
-        pass
-
-# Try importing official Google GenAI SDK
-try:
-    from google import genai
-    from google.genai import types
-    HAS_GENAI = True
-except ImportError:
-    HAS_GENAI = False
-
-# Try importing legacy google.generativeai if genai not present
-if not HAS_GENAI:
-    try:
-        import google.generativeai as legacy_genai
-        HAS_LEGACY_GENAI = True
-    except ImportError:
-        HAS_LEGACY_GENAI = False
-else:
-    HAS_LEGACY_GENAI = False
-
+    pass
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -45,151 +38,280 @@ REVIEW_DIR = DATA_DIR / "review_queue"
 PROCESSED_DIR = DATA_DIR / "processed"
 SEED_FILE = DATA_DIR / "seed_prompts.json"
 
+CLASSES = ["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
 
-PROMPT_TEMPLATE = """You are an expert data generation assistant for training an intent classification router in an LLM agent system.
+PREFERRED_MODELS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-2.5-flash",
+]
 
-We have 3 intent classes:
-1. "READ": Information retrieval, database queries, reading customer logs, inspecting status, lookups, search.
-2. "WRITE": Database mutations, record creation, updates, deletes, transactional inserts, modifying system settings.
-3. "GENERAL_CHAT": Chit-chat, conversational pleasantries, greetings, open-ended trivia, philosophical questions, explanations.
 
-Seed examples for intent '{intent}':
-{seed_examples}
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
 
-Generate {num_samples} realistic, diverse, and unique user prompts for the '{intent}' intent.
-Include variations in:
-- Sentence length (very short requests vs. detailed multi-clause sentences)
-- Phrasing, verb synonyms, and colloquial tone
-- Mild typos or casual chat formats
-- Realistic entities (names, IDs, dates, quantities)
 
-Also identify 1-2 borderline or ambiguous examples that might test routing boundaries (e.g. asking to preview a write action, or asking how to delete something).
+class SyntheticPrompt(BaseModel):
+    prompt: str = Field(..., description="Realistic user query or prompt")
+    intent: Literal["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
+    confidence: float = Field(default=0.95, description="Synthetic labeling confidence score")
+    variation_type: str = Field(
+        default="standard",
+        description="short, multi_clause, colloquial, typo, boundary, or mixed_read_write"
+    )
 
-Respond ONLY with valid JSON conforming to this schema:
-{{
-  "synthetic_prompts": [
-    {{"prompt": "string", "intent": "{intent}", "confidence": 0.95}}
-  ],
-  "borderline_prompts": [
-    {{"prompt": "string", "intended_intent": "{intent}", "reason": "string"}}
-  ]
-}}
+
+class SyntheticMultiTurnPrompt(BaseModel):
+    chat_history: List[ChatTurn] = Field(
+        ...,
+        min_length=2,
+        max_length=4,
+        description="2 to 4 preceding user/assistant conversation turns"
+    )
+    prompt: str = Field(..., description="Follow-up user message whose intent depends on chat_history")
+    intent: Literal["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
+    confidence: float = Field(default=0.95)
+    variation_type: str = Field(default="multi_turn")
+
+
+class BorderlinePrompt(BaseModel):
+    prompt: str = Field(..., description="Ambiguous or borderline prompt")
+    intended_intent: Literal["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
+    reason: str = Field(..., description="Why this prompt is borderline or tricky")
+
+
+class SingleTurnBatchResponse(BaseModel):
+    synthetic_prompts: List[SyntheticPrompt]
+    borderline_prompts: List[BorderlinePrompt]
+
+
+class MultiTurnBatchResponse(BaseModel):
+    multi_turn_prompts: List[SyntheticMultiTurnPrompt]
+    borderline_prompts: List[BorderlinePrompt]
+
+
+PROMPT_SYSTEM_GUIDE = """You are an expert NLP data generation engine specializing in enterprise CRM and commercial real estate database intent routing (ReConnect / Mira assistant).
+
+Classify English prompts into exactly 3 intent classes:
+1. "GENERAL_CHAT":
+   - General conversation, greetings, pleasantries, office announcements, conceptual questions.
+   - SQL syntax explanations, how-to tutorials, architecture advice, or writing sample SQL WITHOUT executing on live DB.
+   - Drafting emails, proposals, or summaries WITHOUT saving/logging them into the database.
+   - Examples: "How do I delete a row in PostgreSQL?", "Explain indexing", "Can you draft a follow-up email to HSBC?", "Write an example SQL query to update user email".
+
+2. "DB_READ":
+   - Requests to fetch, search, filter, count, aggregate, compare, or inspect live, archived, or deleted records/audit logs/schemas from the database.
+   - Examples: "Show deleted rows", "List all clients in China", "What is the primary contact for Acme Corp?", "Inspect recent updates on deal #8436".
+
+3. "DB_WRITE":
+   - Requests (direct imperative OR polite/indirect like "Can you...", "Please...") to insert, create, update, delete, archive, assign, log a call/note, schedule a meeting, or mutate live records/state in the database.
+   - Mixed READ+WRITE compound prompts (fetching something AND creating/updating/deleting something in the same request) MUST be labeled "DB_WRITE".
+   - Examples: "Delete row 42", "Can you remove contact #8436?", "Find HSBC's primary contact and update their mobile to +1-555-0192", "Log a call with Microsoft".
+
+CRITICAL BOUNDARY DISTINCTIONS:
+- "How do I delete a row?" -> GENERAL_CHAT | "Show deleted rows" -> DB_READ | "Delete row 42" / "Can you delete row 42?" -> DB_WRITE.
+- "Draft an email to Sarah at HSBC" -> GENERAL_CHAT | "Log an email/call with Sarah at HSBC in the CRM" -> DB_WRITE.
+- "Find all inactive leads" -> DB_READ | "Find all inactive leads and mark them archived" -> DB_WRITE.
 """
 
 
 def load_seed_prompts() -> Dict[str, List[str]]:
     if not SEED_FILE.exists():
-        raise FileNotFoundError(f"Seed prompts file not found at {SEED_FILE}")
+        raise FileNotFoundError(f"Seed file not found at {SEED_FILE}")
     with open(SEED_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    return {k: v for k, v in data.items() if k in CLASSES}
 
 
-def call_gemini(api_key: str, prompt: str) -> Dict[str, Any]:
-    """Calls Gemini API using google-genai SDK or legacy fallback."""
-    if HAS_GENAI:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.7,
-            )
-        )
-        text = response.text
-    elif HAS_LEGACY_GENAI:
-        legacy_genai.configure(api_key=api_key)
-        model = legacy_genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            generation_config={"response_mime_type": "application/json", "temperature": 0.7}
-        )
-        response = model.generate_content(prompt)
-        text = response.text
-    else:
-        raise ImportError(
-            "Neither 'google-genai' nor 'google-generativeai' is installed. "
-            "Please run: pip install google-genai"
-        )
+def _generate_with_models(client: Any, prompt_text: str, schema_cls: Any, temperature: float = 0.8) -> Any:
+    from google.genai import types
 
-    # Clean potential markdown wrapping if returned
-    text = text.strip()
-    if text.startswith("```json"):
-        text = text[7:]
-    if text.startswith("```"):
-        text = text[3:]
-    if text.endswith("```"):
-        text = text[:-3]
-    return json.loads(text.strip())
+    last_err = None
+    for model_name in PREFERRED_MODELS:
+        for attempt in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=[
+                        types.Content(
+                            role="user",
+                            parts=[types.Part.from_text(text=prompt_text)],
+                        )
+                    ],
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=schema_cls,
+                        temperature=temperature,
+                    ),
+                )
+                data = json.loads(response.text)
+                return schema_cls(**data)
+            except Exception as e:
+                last_err = e
+                print(f"   [WARN] Model '{model_name}' attempt {attempt + 1} failed: {e}")
+                time.sleep(1.5 * (attempt + 1))
+
+    raise RuntimeError(f"All Gemini models failed: {last_err}")
 
 
-def generate_mock_data(intent: str, seeds: List[str], count: int) -> Dict[str, Any]:
-    """Generates synthetic examples deterministically if API key is not yet set."""
-    templates = {
-        "READ": [
-            "Can you show me {}?",
-            "Look up {} in the system.",
-            "I need to check the status of {}.",
-            "Fetch the current details for {}.",
-            "Display all records related to {}.",
-            "Could you pull up the info on {}?",
-            "Search for {} and list the results.",
-        ],
-        "WRITE": [
-            "Please create a new entry for {}.",
-            "Update the record for {} immediately.",
-            "Remove {} from the active database.",
-            "Insert a new {} into our table.",
-            "Modify the existing details of {}.",
-            "Delete {} as requested by user.",
-            "Schedule and save {} right away.",
-        ],
-        "GENERAL_CHAT": [
-            "What do you think about {}?",
-            "Tell me more about {}.",
-            "How does {} work in simple terms?",
-            "Write a brief summary regarding {}.",
-            "Good morning! Can we talk about {}?",
-            "Give me some fun trivia about {}.",
+def call_gemini_single_turn(
+    client: Any,
+    intent: str,
+    seed_examples: List[str],
+    batch_size: int,
+    sub_theme: str,
+    existing_samples: List[str],
+) -> SingleTurnBatchResponse:
+    avoid_snippet = "\n".join(f"- {s}" for s in existing_samples[-15:]) if existing_samples else "(none yet)"
+    user_prompt = f"""Target Intent: {intent}
+Focus Variation Theme: {sub_theme}
+
+Seed Examples for reference:
+{chr(10).join(f"- {s}" for s in seed_examples)}
+
+Do NOT repeat or closely paraphrase these already-generated prompts:
+{avoid_snippet}
+
+Generate {batch_size} unique, highly realistic, diverse user prompts for the '{intent}' class.
+Ensure wide variety in:
+- Sentence structure, length (from 2-word terse commands to detailed multi-clause requests), and tone (direct, polite "can you/could you", urgent, colloquial, occasional mild typos).
+- Realistic commercial real estate & CRM entities (broker names, companies across APAC/EMEA/US, sq ft areas, Grade A/B buildings, lease terms, deal IDs, dates, currencies, phone/email formats).
+- Realistic boundary cases that strictly obey the intent rules above.
+- Also provide 2 tricky borderline prompts (with their intended_intent and reason) for human review.
+"""
+    return _generate_with_models(client, f"{PROMPT_SYSTEM_GUIDE}\n\n{user_prompt}", SingleTurnBatchResponse)
+
+
+def call_gemini_multi_turn(
+    client: Any,
+    intent: str,
+    batch_size: int,
+    scenario_focus: str,
+) -> MultiTurnBatchResponse:
+    user_prompt = f"""Target Intent for the FINAL user turn: {intent}
+Scenario Focus: {scenario_focus}
+
+Generate {batch_size} unique multi-turn conversations (2 to 4 alternating user/assistant turns in `chat_history`, plus a final `prompt` from the user).
+CRITICAL REQUIREMENT:
+- The final `prompt` MUST be a natural follow-up (e.g., short confirmation like "Yes, go ahead", location/filter tweak like "What about Singapore?", entity pronoun like "Update his email to...", pivot like "Actually just show them first, don't delete", or conceptual tangent like "Wait, what does Grade A mean?").
+- Its true intent ({intent}) should depend meaningfully on `chat_history` so the model learns to read context rather than guessing blindly.
+- All `intent` fields in `multi_turn_prompts` must be '{intent}'.
+- Also include 1 tricky borderline single- or multi-turn prompt in `borderline_prompts`.
+"""
+    return _generate_with_models(client, f"{PROMPT_SYSTEM_GUIDE}\n\n{user_prompt}", MultiTurnBatchResponse)
+
+
+def generate_mock_single_turn(intent: str, count: int) -> SingleTurnBatchResponse:
+    """Offline fallback generator when --mock is explicitly selected or API is disabled."""
+    synthetic: List[SyntheticPrompt] = []
+    borderline: List[BorderlinePrompt] = []
+    companies = [
+        "Apex Digital", "BlueWave Tech", "Orion Financial", "Tata Consultancy",
+        "Nestle", "Dow Chemical", "Microsoft", "Amazon", "HSBC", "Novartis",
+        "CBRE India", "Brookfield Properties", "CapitaLand", "JPMorgan"
+    ]
+    cities = ["Mumbai", "Bengaluru", "Hong Kong", "Singapore", "London", "New York", "Tokyo", "Dubai"]
+    ids = ["#8436", "#1092", "#9921", "#5504", "#7712", "#3401", "#6618", "#4209"]
+
+    if intent == "GENERAL_CHAT":
+        topics = [
+            "delete a row without cascade", "update email addresses in bulk", "index foreign keys",
+            "transaction isolation levels", "soft deletes vs hard deletes", "database sharding",
+            "connection pooling", "composite primary keys", "tenant lease escalation clauses"
         ]
-    }
-    entities = [
-        "account #991", "the Q4 financial report", "customer Alice Smith",
-        "inventory SKU-402", "order #5821", "the payment gateway timeout",
-        "our team roadmap", "the user settings profile", "invoice #8801"
-    ]
+        templates = [
+            "How do I {} in SQL?",
+            "Explain the concept of {} clearly.",
+            "Can you write a sample SQL query to {}?",
+            "Draft a polite follow-up email regarding {}.",
+            "What is the best practice for {}?",
+        ]
+        for i in range(count):
+            t = templates[i % len(templates)]
+            top = topics[(i + (i // len(templates)) * 2) % len(topics)]
+            synthetic.append(SyntheticPrompt(prompt=t.format(top), intent="GENERAL_CHAT", variation_type="boundary"))
+    elif intent == "DB_READ":
+        templates = [
+            "List all active records for {c} in {city}.",
+            "Show deleted rows from the {c} archive.",
+            "Find the primary contact and email for {c}.",
+            "How many pursuits are open for {c} in {city}?",
+            "Inspect recent mutations logged for deal {id}.",
+            "Count vacant office listings above 10,000 sq ft in {city}.",
+        ]
+        for i in range(count):
+            t = templates[i % len(templates)]
+            synthetic.append(SyntheticPrompt(
+                prompt=t.format(
+                    c=companies[i % len(companies)],
+                    city=cities[(i * 3) % len(cities)],
+                    id=ids[i % len(ids)],
+                ),
+                intent="DB_READ",
+                variation_type="query",
+            ))
+    else:
+        templates = [
+            "Can you delete row {id} from staging?",
+            "Add {c} as a new company in {city}.",
+            "Find {c}'s primary contact and update their phone to +1-555-0192.",
+            "Log a call with {c} regarding their {city} office requirement.",
+            "Mark pursuit {id} for {c} as closed-won.",
+            "Schedule a meeting with {c} in {city} for next Tuesday at 3 PM.",
+        ]
+        for i in range(count):
+            t = templates[i % len(templates)]
+            synthetic.append(SyntheticPrompt(
+                prompt=t.format(
+                    c=companies[i % len(companies)],
+                    city=cities[(i * 5) % len(cities)],
+                    id=ids[i % len(ids)],
+                ),
+                intent="DB_WRITE",
+                variation_type="mixed_read_write",
+            ))
+    return SingleTurnBatchResponse(synthetic_prompts=synthetic, borderline_prompts=borderline)
 
-    synthetic = []
-    for _ in range(count):
-        tpl = random.choice(templates.get(intent, ["Help with {}."]))
-        ent = random.choice(entities)
-        synthetic.append({
-            "prompt": tpl.format(ent),
-            "intent": intent,
-            "confidence": round(random.uniform(0.90, 0.99), 2)
-        })
 
-    borderline = [
-        {
-            "prompt": f"Can you show me how to delete {random.choice(entities)}?",
-            "intended_intent": intent,
-            "reason": "Contains both read and write keywords; borderline routing ambiguity."
-        }
-    ]
-    return {"synthetic_prompts": synthetic, "borderline_prompts": borderline}
+def _record_key(rec: Dict[str, Any]) -> str:
+    hist = rec.get("chat_history") or []
+    hist_norm = [(str(t.get("role", "")).strip().lower(), str(t.get("content", "")).strip().lower()) for t in hist]
+    return json.dumps({"h": hist_norm, "p": rec["text"].strip().lower()}, ensure_ascii=False)
 
 
-def split_data(records: List[Dict[str, str]], train_ratio=0.7, val_ratio=0.15):
-    """Splits records into train, val, and test partitions."""
-    random.seed(42)
-    random.shuffle(records)
-    n = len(records)
-    n_train = int(n * train_ratio)
-    n_val = int(n * val_ratio)
+def split_data(
+    records: List[Dict[str, Any]],
+    train_ratio: float = 0.75,
+    val_ratio: float = 0.10,
+    seed: int = 42,
+):
+    """Stratified split by (label, is_multi_turn) into 75% train, 10% val, 15% test."""
+    random.seed(seed)
+    buckets: Dict[tuple, List[Dict[str, Any]]] = {}
+    for r in records:
+        key = (r["label"], bool(r.get("chat_history")))
+        buckets.setdefault(key, []).append(r)
 
-    train = records[:n_train]
-    val = records[n_train:n_train + n_val]
-    test = records[n_train + n_val:]
-    return train, val, test
+    train_split: List[Dict[str, Any]] = []
+    val_split: List[Dict[str, Any]] = []
+    test_split: List[Dict[str, Any]] = []
+
+    for _, items in sorted(buckets.items()):
+        random.shuffle(items)
+        n = len(items)
+        n_train = int(n * train_ratio)
+        n_val = max(1, int(n * val_ratio)) if n >= 8 else int(n * val_ratio)
+        if n_train + n_val >= n and n >= 3:
+            n_val = max(0, n - n_train - 1)
+        train_split.extend(items[:n_train])
+        val_split.extend(items[n_train:n_train + n_val])
+        test_split.extend(items[n_train + n_val:])
+
+    random.shuffle(train_split)
+    random.shuffle(val_split)
+    random.shuffle(test_split)
+    return train_split, val_split, test_split
 
 
 def save_jsonl(filepath: Path, records: List[Dict[str, Any]]):
@@ -200,97 +322,195 @@ def save_jsonl(filepath: Path, records: List[Dict[str, Any]]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate synthetic intent data using Gemini API.")
-    parser.add_argument("--samples-per-class", type=int, default=25, help="Number of synthetic samples per class")
-    parser.add_argument("--mock", action="store_true", help="Force local synthetic mock generation without calling Gemini")
+    parser = argparse.ArgumentParser(description="Seed-Guided Synthetic Data Generator with Gemini API.")
+    parser.add_argument("--target-total", type=int, default=810, help="Target dataset size across 3 classes")
+    parser.add_argument("--multi-turn-ratio", type=float, default=0.25, help="Fraction of multi-turn chat_history samples")
+    parser.add_argument("--mock", action="store_true", help="Use offline mock generator instead of Gemini API")
+    parser.add_argument("--strict-api", action="store_true", help="Fail immediately if Gemini API call fails instead of falling back")
     args = parser.parse_args()
 
-    load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
-
     seeds = load_seed_prompts()
+
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     REVIEW_DIR.mkdir(parents=True, exist_ok=True)
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-    all_synthetic: List[Dict[str, Any]] = []
-    all_borderline: List[Dict[str, Any]] = []
+    use_api = bool(api_key and not api_key.startswith("your_") and not args.mock)
+    client = None
+    if use_api:
+        try:
+            from google import genai
+            client = genai.Client(api_key=api_key)
+            print("[INFO] Connected to Google GenAI SDK.")
+        except Exception as e:
+            if args.strict_api:
+                raise
+            print(f"[WARN] Failed to initialize Google GenAI SDK: {e}. Using mock generator.")
+            use_api = False
 
-    # Include original seed prompts
-    for intent, examples in seeds.items():
-        for ex in examples:
-            all_synthetic.append({"prompt": ex, "label": intent, "source": "seed"})
+    per_class_target = max(60, args.target_total // len(CLASSES))
+    print(f"[INFO] Target per class: ~{per_class_target} ({per_class_target * len(CLASSES)} total, multi_turn_ratio={args.multi_turn_ratio})")
 
-    print(f"Loaded {len(seeds)} classes from {SEED_FILE.name}.")
+    all_records: List[Dict[str, Any]] = []
+    review_queue: List[Dict[str, Any]] = []
 
-    use_mock = args.mock or not api_key or api_key == "your_gemini_api_key_here"
-    if use_mock:
-        print("[INFO] No valid GEMINI_API_KEY detected or --mock specified. Using local synthetic template generation.")
-    else:
-        print("[INFO] Connecting to Gemini API...")
-
-    for intent, seed_list in seeds.items():
-        print(f"-> Generating {args.samples_per_class} samples for class '{intent}'...")
-        if use_mock:
-            result = generate_mock_data(intent, seed_list, args.samples_per_class)
-        else:
-            seed_text = "\n".join(f"- {s}" for s in seed_list)
-            prompt = PROMPT_TEMPLATE.format(
-                intent=intent,
-                seed_examples=seed_text,
-                num_samples=args.samples_per_class
-            )
-            result = call_gemini(api_key, prompt)
-
-        for p in result.get("synthetic_prompts", []):
-            all_synthetic.append({
-                "prompt": p["prompt"],
+    for intent, items in seeds.items():
+        for prompt_text in items:
+            all_records.append({
+                "text": prompt_text.strip(),
                 "label": intent,
-                "confidence": p.get("confidence", 0.95),
-                "source": "gemini_synthetic" if not use_mock else "mock_synthetic"
+                "source": "seed",
             })
 
-        for b in result.get("borderline_prompts", []):
-            all_borderline.append({
-                "prompt": b["prompt"],
-                "proposed_label": b.get("intended_intent", intent),
-                "reason": b.get("reason", "Ambiguous wording")
-            })
+    single_themes = [
+        "enterprise CRM workflows: companies, contacts, brokers, deals, pursuits, and commercial properties",
+        "tricky boundaries: asking how to mutate/delete vs showing deleted/audit records vs executing mutations",
+        "mixed READ+WRITE compound prompts (e.g. find X and update Y) and polite/indirect write requests ('can you', 'please')",
+        "short, terse, colloquial, and typo-tolerant user prompts (2 to 6 words)",
+        "complex multi-clause prompts with filters, sq ft ranges, cities, dates, and deal values",
+    ]
+    multi_turn_scenarios = [
+        "pronoun and entity carry-over across 2-4 turns (e.g. 'Update his phone', 'What about Singapore?', 'Show their pursuits')",
+        "confirmation or rejection/pivot after assistant clarification (e.g. 'Yes go ahead', 'Actually just show them first, don't delete', 'Wait explain how that works first')",
+    ]
 
-    # Save raw outputs
-    raw_path = RAW_DIR / "synthetic_prompts.json"
-    with open(raw_path, "w", encoding="utf-8") as f:
-        json.dump(all_synthetic, f, indent=2, ensure_ascii=False)
-    print(f"[OK] Saved {len(all_synthetic)} raw prompts to {raw_path}")
+    for intent in CLASSES:
+        seed_list = seeds.get(intent, [])
+        existing_texts = [r["text"] for r in all_records if r["label"] == intent]
+        current_count = len(existing_texts)
+        needed_total = max(0, per_class_target - current_count)
+        needed_multi = int(per_class_target * args.multi_turn_ratio)
+        needed_single = max(0, needed_total - needed_multi)
 
-    # Save review queue
-    if all_borderline:
-        review_path = REVIEW_DIR / "review_needed.json"
-        with open(review_path, "w", encoding="utf-8") as f:
-            json.dump(all_borderline, f, indent=2, ensure_ascii=False)
-        print(f"[OK] Flagged {len(all_borderline)} borderline prompts to {review_path}")
+        print(f"\n-> Class '{intent}': seeds={current_count}, single_target={needed_single}, multi_target={needed_multi}")
 
-    # Deduplicate prompts by lowercased text
+        # 1. Single-turn generation
+        batch_size = max(25, (needed_single + len(single_themes) - 1) // len(single_themes))
+        gen_single = 0
+        for theme in single_themes:
+            if gen_single >= needed_single:
+                break
+            req_count = min(batch_size, needed_single - gen_single)
+            print(f"   [Single-Turn] Theme: '{theme[:55]}...' | Requesting {req_count}...")
+            source_tag = "gemini_synthetic"
+            if use_api and client:
+                try:
+                    resp = call_gemini_single_turn(client, intent, seed_list, req_count, theme, existing_texts)
+                except Exception as e:
+                    if args.strict_api:
+                        raise
+                    print(f"   [WARN] Gemini single-turn failed ({e}). Using mock fallback.")
+                    resp = generate_mock_single_turn(intent, req_count)
+                    source_tag = "mock_fallback"
+            else:
+                resp = generate_mock_single_turn(intent, req_count)
+                source_tag = "mock_synthetic"
+
+            for sp in resp.synthetic_prompts:
+                txt = sp.prompt.strip()
+                all_records.append({
+                    "text": txt,
+                    "label": intent,
+                    "variation_type": sp.variation_type,
+                    "confidence": sp.confidence,
+                    "source": source_tag,
+                })
+                existing_texts.append(txt)
+                gen_single += 1
+
+            for bp in resp.borderline_prompts:
+                review_queue.append({
+                    "prompt": bp.prompt.strip(),
+                    "proposed_label": bp.intended_intent,
+                    "reason": bp.reason,
+                })
+
+        # 2. Multi-turn generation
+        if needed_multi > 0 and use_api and client:
+            mt_batch = max(15, (needed_multi + len(multi_turn_scenarios) - 1) // len(multi_turn_scenarios))
+            gen_multi = 0
+            for scenario in multi_turn_scenarios:
+                if gen_multi >= needed_multi:
+                    break
+                req_count = min(mt_batch, needed_multi - gen_multi)
+                print(f"   [Multi-Turn] Scenario: '{scenario[:55]}...' | Requesting {req_count}...")
+                try:
+                    mt_resp = call_gemini_multi_turn(client, intent, req_count, scenario)
+                    for mp in mt_resp.multi_turn_prompts:
+                        hist = [{"role": t.role, "content": t.content.strip()} for t in mp.chat_history if t.content.strip()]
+                        if not hist:
+                            continue
+                        all_records.append({
+                            "text": mp.prompt.strip(),
+                            "chat_history": hist,
+                            "label": intent,
+                            "variation_type": mp.variation_type,
+                            "confidence": mp.confidence,
+                            "source": "gemini_multi_turn",
+                        })
+                        gen_multi += 1
+                    for bp in mt_resp.borderline_prompts:
+                        review_queue.append({
+                            "prompt": bp.prompt.strip(),
+                            "proposed_label": bp.intended_intent,
+                            "reason": bp.reason,
+                        })
+                except Exception as e:
+                    if args.strict_api:
+                        raise
+                    print(f"   [WARN] Gemini multi-turn failed ({e}).")
+
+    # Save raw generated output
+    raw_file = RAW_DIR / "synthetic_prompts.json"
+    with open(raw_file, "w", encoding="utf-8") as f:
+        json.dump(all_records, f, indent=2, ensure_ascii=False)
+    print(f"\n[OK] Saved {len(all_records)} raw records to {raw_file}")
+
+    # Deduplicate cleanly by (chat_history, prompt)
     seen = set()
-    deduped = []
-    for item in all_synthetic:
-        key = item["prompt"].strip().lower()
+    deduped: List[Dict[str, Any]] = []
+    for item in all_records:
+        text = item["text"].strip()
+        if not text:
+            continue
+        clean_row: Dict[str, Any] = {"text": text, "label": item["label"]}
+        if item.get("chat_history"):
+            clean_row["chat_history"] = item["chat_history"]
+        key = _record_key(clean_row)
         if key not in seen:
             seen.add(key)
-            deduped.append({"text": item["prompt"], "label": item["label"]})
+            deduped.append(clean_row)
 
-    print(f"Total deduplicated dataset size: {len(deduped)}")
+    print(f"[OK] Total deduplicated prompts: {len(deduped)}")
+    for c in CLASSES:
+        c_rows = [d for d in deduped if d["label"] == c]
+        mt_cnt = sum(1 for d in c_rows if d.get("chat_history"))
+        print(f"     - {c}: {len(c_rows)} (single={len(c_rows) - mt_cnt}, multi_turn={mt_cnt})")
 
-    # Split into train, val, test
-    train_data, val_data, test_data = split_data(deduped)
+    # Deduplicate review queue and exclude prompts already in training pool
+    clean_queue = []
+    queue_seen = set(d["text"].strip().lower() for d in deduped if not d.get("chat_history"))
+    for b in review_queue:
+        bp_norm = b["prompt"].strip().lower()
+        if bp_norm and bp_norm not in queue_seen:
+            queue_seen.add(bp_norm)
+            clean_queue.append(b)
+
+    review_file = REVIEW_DIR / "review_needed.json"
+    with open(review_file, "w", encoding="utf-8") as f:
+        json.dump(clean_queue, f, indent=2, ensure_ascii=False)
+    print(f"[OK] Flagged {len(clean_queue)} borderline prompts to {review_file}")
+
+    train_data, val_data, test_data = split_data(deduped, train_ratio=0.75, val_ratio=0.10)
     save_jsonl(PROCESSED_DIR / "train.jsonl", train_data)
     save_jsonl(PROCESSED_DIR / "val.jsonl", val_data)
     save_jsonl(PROCESSED_DIR / "test.jsonl", test_data)
 
-    print(f"[OK] Successfully saved processed splits to {PROCESSED_DIR}:")
-    print(f"     - train.jsonl: {len(train_data)} samples")
-    print(f"     - val.jsonl:   {len(val_data)} samples")
-    print(f"     - test.jsonl:  {len(test_data)} samples")
+    print(f"\n[OK] Partitioned datasets saved to {PROCESSED_DIR}:")
+    print(f"     - train.jsonl (75%): {len(train_data)} samples")
+    print(f"     - val.jsonl   (10%): {len(val_data)} samples")
+    print(f"     - test.jsonl  (15%): {len(test_data)} samples")
 
 
 if __name__ == "__main__":
