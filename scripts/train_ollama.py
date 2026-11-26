@@ -1,12 +1,12 @@
 """
 Fine-tunes a compact causal LLM (default: Qwen/Qwen2.5-0.5B-Instruct) with LoRA
 on single-turn and multi-turn intent routing data so it classifies prompts
-into a single token (CHAT, READ, or WRITE) with calibrated next-token probabilities.
+into a single token (CHAT, READ, WRITE, or ASK) with calibrated next-token probabilities.
 
 Designed for CPU-only Windows or GPU training:
 - Dynamic batch padding + length-grouped sampling
 - Loss computed strictly on the assistant target token (+ EOS)
-- Evaluates validation Accuracy, Macro F1, and DB_WRITE Recall via exact 3-token logits
+- Evaluates validation Accuracy, Macro F1, DB_WRITE Recall, and CLARIFICATION_REQUIRED Recall via exact 4-token logits
 - Merges LoRA weights into FP32 HuggingFace format at models/ollama_merged/
 """
 
@@ -37,6 +37,7 @@ from app.intent_spec import (
     CLASSES,
     OLLAMA_CLASSIFIER_SYSTEM_PROMPT,
     ROUTE_TO_TOKEN,
+    apply_routing_guardrails,
     build_ollama_messages,
     load_jsonl_dataset,
     load_seed_dataset,
@@ -62,13 +63,15 @@ def _extract_token_ids(template_out: Any) -> List[int]:
 def encode_sample(
     row: Dict[str, Any],
     tokenizer: Any,
-    max_seq_length: int = 256,
-) -> Dict[str, List[int]]:
+    max_seq_length: int = 384,
+) -> Dict[str, Any]:
     target_token = ROUTE_TO_TOKEN[row["label"]]
     eos_str = tokenizer.eos_token or "<|im_end|>"
     target_ids = tokenizer.encode(target_token + eos_str, add_special_tokens=False)
 
     history = list(row.get("chat_history") or [])
+    history_trimmed = False
+    prompt_truncated = False
     prompt_ids: List[int] = []
     while True:
         messages = build_ollama_messages(
@@ -88,10 +91,12 @@ def encode_sample(
             break
         # Drop oldest history turn if conversation exceeds max_seq_length
         history = history[1:]
+        history_trimmed = True
 
     if len(prompt_ids) + len(target_ids) > max_seq_length:
         keep_prompt = max_seq_length - len(target_ids)
         prompt_ids = prompt_ids[-keep_prompt:]
+        prompt_truncated = True
 
     input_ids = prompt_ids + target_ids
     attention_mask = [1] * len(input_ids)
@@ -101,11 +106,13 @@ def encode_sample(
         "attention_mask": attention_mask,
         "labels": labels,
         "prompt_ids": prompt_ids,
+        "history_trimmed": history_trimmed,
+        "prompt_truncated": prompt_truncated,
     }
 
 
 class IntentTokenDataset(TorchDataset):
-    def __init__(self, encoded_rows: List[Dict[str, List[int]]]):
+    def __init__(self, encoded_rows: List[Dict[str, Any]]):
         self.rows = encoded_rows
 
     def __len__(self) -> int:
@@ -153,10 +160,12 @@ def resolve_class_token_ids(tokenizer: Any) -> Dict[str, int]:
 def evaluate_logits_on_split(
     model: Any,
     val_rows: List[Dict[str, Any]],
-    val_encoded: List[Dict[str, List[int]]],
+    val_encoded: List[Dict[str, Any]],
     class_token_ids: Dict[str, int],
     write_threshold: float = settings.WRITE_THRESHOLD,
+    clarify_threshold: float = settings.CLARIFY_THRESHOLD,
     confidence_threshold: float = settings.CONFIDENCE_THRESHOLD,
+    fallback_route: str = settings.FALLBACK_ROUTE,
 ) -> Dict[str, float]:
     model.eval()
     device = next(model.parameters()).device
@@ -174,21 +183,22 @@ def evaluate_logits_on_split(
             probs = F.softmax(next_logits.float(), dim=-1).cpu().tolist()
             prob_map = {c: float(p) for c, p in zip(CLASSES, probs)}
 
-            raw_pred = max(prob_map.items(), key=lambda kv: kv[1])[0]
+            guarded_pred, raw_pred, _, _ = apply_routing_guardrails(
+                probabilities=prob_map,
+                confidence_threshold=confidence_threshold,
+                write_threshold=write_threshold,
+                clarify_threshold=clarify_threshold,
+                fallback_route=fallback_route,
+            )
             y_raw.append(raw_pred)
-
-            if prob_map["DB_WRITE"] >= write_threshold:
-                y_guarded.append("DB_WRITE")
-            elif prob_map[raw_pred] < confidence_threshold:
-                y_guarded.append("GENERAL_CHAT")
-            else:
-                y_guarded.append(raw_pred)
+            y_guarded.append(guarded_pred)
 
     raw_acc = accuracy_score(y_true, y_raw)
     raw_f1 = f1_score(y_true, y_raw, average="macro", zero_division=0)
     guarded_acc = accuracy_score(y_true, y_guarded)
     guarded_f1 = f1_score(y_true, y_guarded, average="macro", zero_division=0)
     write_rec = recall_score(y_true, y_guarded, labels=["DB_WRITE"], average=None, zero_division=0)[0]
+    clarify_rec = recall_score(y_true, y_guarded, labels=["CLARIFICATION_REQUIRED"], average=None, zero_division=0)[0]
 
     model.train()
     return {
@@ -197,6 +207,7 @@ def evaluate_logits_on_split(
         "guarded_accuracy": round(float(guarded_acc), 4),
         "guarded_macro_f1": round(float(guarded_f1), 4),
         "db_write_recall": round(float(write_rec), 4),
+        "clarification_recall": round(float(clarify_rec), 4),
     }
 
 
@@ -205,7 +216,7 @@ def main():
     if not Path(default_model_id).exists():
         default_model_id = "Qwen/Qwen2.5-0.5B-Instruct"
 
-    parser = argparse.ArgumentParser(description="LoRA fine-tune Qwen2.5-0.5B-Instruct as 1-token Ollama intent classifier.")
+    parser = argparse.ArgumentParser(description="LoRA fine-tune Qwen2.5-0.5B-Instruct as 1-token 4-class Ollama intent classifier.")
     parser.add_argument("--model-id", type=str, default=default_model_id, help="Base HuggingFace causal LM or local directory")
     parser.add_argument("--epochs", type=float, default=2.0, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=8, help="Per-device batch size")
@@ -213,7 +224,7 @@ def main():
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--lora-r", type=int, default=16, help="LoRA rank")
     parser.add_argument("--lora-alpha", type=int, default=32, help="LoRA alpha")
-    parser.add_argument("--max-seq-length", type=int, default=256, help="Max sequence length")
+    parser.add_argument("--max-seq-length", type=int, default=384, help="Max sequence length (protects multi-turn history + system prompt)")
     parser.add_argument("--max-steps", type=int, default=-1, help="Optional cap on optimizer steps (-1 = full epochs)")
     parser.add_argument("--cpu-threads", type=int, default=min(12, os.cpu_count() or 8), help="PyTorch CPU intra-op threads")
     parser.add_argument("--lora-dir", type=Path, default=LORA_OUT_DIR, help="Output dir for LoRA adapter")
@@ -242,7 +253,7 @@ def main():
         tokenizer.pad_token = tokenizer.eos_token
 
     class_token_ids = resolve_class_token_ids(tokenizer)
-    print(f"[INFO] ChatML template | single-token class IDs: {class_token_ids}")
+    print(f"[INFO] ChatML template | single-token 4-class IDs: {class_token_ids}")
 
     # Wipe stale adapter/merged directories so fresh base training never mixes checkpoints
     run_ckpt_dir = BASE_DIR / "checkpoints" / "ollama_lora_runs"
@@ -256,7 +267,12 @@ def main():
     val_encoded = [encode_sample(r, tokenizer, max_seq_length=args.max_seq_length) for r in val_rows]
 
     lengths = [len(x["input_ids"]) for x in train_encoded]
-    print(f"[INFO] Tokenized lengths -> min: {min(lengths)}, median: {int(np.median(lengths))}, max: {max(lengths)}")
+    trimmed = sum(1 for x in train_encoded if x["history_trimmed"])
+    truncated = sum(1 for x in train_encoded if x["prompt_truncated"])
+    print(
+        f"[INFO] Tokenized lengths -> min: {min(lengths)}, median: {int(np.median(lengths))}, max: {max(lengths)} "
+        f"(history_trimmed={trimmed}, prompt_truncated={truncated}, max_seq_length={args.max_seq_length})"
+    )
 
     use_gpu = torch.cuda.is_available()
     model = AutoModelForCausalLM.from_pretrained(
@@ -293,9 +309,13 @@ def main():
                 f"\n[VAL epoch={state.epoch:.1f}] "
                 f"raw_acc={metrics['raw_accuracy']:.4f} raw_f1={metrics['raw_macro_f1']:.4f} | "
                 f"guarded_acc={metrics['guarded_accuracy']:.4f} guarded_f1={metrics['guarded_macro_f1']:.4f} "
-                f"db_write_rec={metrics['db_write_recall']:.4f}"
+                f"db_write_rec={metrics['db_write_recall']:.4f} clarify_rec={metrics['clarification_recall']:.4f}"
             )
-            score = 0.5 * metrics["guarded_macro_f1"] + 0.5 * metrics["db_write_recall"]
+            score = (
+                0.50 * metrics["guarded_macro_f1"]
+                + 0.25 * metrics["db_write_recall"]
+                + 0.25 * metrics["clarification_recall"]
+            )
             if score >= best_score:
                 best_score = score
                 best_metrics = metrics
@@ -365,9 +385,12 @@ def main():
     meta = {
         "base_model": args.model_id,
         "chat_family": "chatml",
+        "classes": CLASSES,
+        "route_to_token": ROUTE_TO_TOKEN,
         "train_samples": len(train_rows),
         "val_samples": len(val_rows),
         "epochs": args.epochs,
+        "max_seq_length": args.max_seq_length,
         "lora_r": args.lora_r,
         "lora_alpha": args.lora_alpha,
         "train_seconds": round(train_sec, 2),

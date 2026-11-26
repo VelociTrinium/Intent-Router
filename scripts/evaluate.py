@@ -1,11 +1,11 @@
 """
-Evaluation Suite for the fine-tuned Ollama Qwen2.5-0.5B Intent Router.
+Evaluation Suite for the fine-tuned 4-class Ollama Qwen2.5-0.5B Intent Router.
 Evaluates single-turn and multi-turn test samples from `data/processed/test.jsonl`
 (falling back to `data/seed_prompts.json` if absent) and outputs:
-- Raw model accuracy/F1 vs Guarded RouterEngine accuracy/F1 (WRITE_THRESHOLD=0.40, CONFIDENCE_THRESHOLD=0.60)
-- Per-class Precision, Recall, and F1-score (highlighting DB_WRITE Recall)
+- Raw model accuracy/F1 vs Guarded RouterEngine accuracy/F1
+- Per-class Precision, Recall, and F1-score (highlighting DB_WRITE and CLARIFICATION_REQUIRED Recall)
 - Multi-turn subset accuracy
-- Full 3x3 Confusion Matrix
+- Full 4x4 Confusion Matrix
 - Inference Latency Statistics (mean, p50 median, p95) on local hardware
 - Full list of misclassified test examples
 """
@@ -46,7 +46,7 @@ def load_test_records() -> List[Dict[str, Any]]:
 
 def print_confusion_matrix(y_true: List[str], y_pred: List[str], classes: List[str], title: str):
     cm = confusion_matrix(y_true, y_pred, labels=classes)
-    col_width = 15
+    col_width = max(15, max((len(c) for c in classes), default=12) + 2)
     header = f"{'True \\ Pred':<{col_width}}" + "".join(f"{c:>{col_width}}" for c in classes)
     separator = "=" * len(header)
     print("\n" + separator)
@@ -95,6 +95,7 @@ def _compute_metrics(y_true: List[str], y_pred: List[str]) -> Dict[str, Any]:
         "macro_f1": round(float(f1_macro), 4),
         "weighted_f1": round(float(f1_weight), 4),
         "db_write_recall": per_class["DB_WRITE"]["recall"],
+        "clarification_recall": per_class["CLARIFICATION_REQUIRED"]["recall"],
         "per_class": per_class,
     }
 
@@ -161,21 +162,22 @@ def evaluate_ollama_model(
             4,
         )
 
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 65)
     print(f"PERFORMANCE SUMMARY: {display_name}")
-    print("=" * 60)
+    print("=" * 65)
     print(f"Guarded Accuracy      : {guarded_metrics['accuracy'] * 100:.2f}%  (Raw: {raw_metrics['accuracy'] * 100:.2f}%)")
     print(f"Guarded Macro F1      : {guarded_metrics['macro_f1']:.4f}   (Raw: {raw_metrics['macro_f1']:.4f})")
     print(f"DB_WRITE Recall       : {guarded_metrics['db_write_recall'] * 100:.2f}%  (Raw: {raw_metrics['db_write_recall'] * 100:.2f}%)")
+    print(f"CLARIFICATION Recall  : {guarded_metrics['clarification_recall'] * 100:.2f}%  (Raw: {raw_metrics['clarification_recall'] * 100:.2f}%)")
     if mt_acc is not None:
         print(f"Multi-Turn Accuracy   : {mt_acc * 100:.2f}% ({len(mt_indices)} samples)")
     print(f"Cold-Start Latency    : {cold_start_ms:.2f} ms")
-    print("=" * 60)
+    print("=" * 65)
 
     print("\nGuarded Per-Class Classification Report:")
     print(classification_report(y_true, y_guarded, labels=CLASSES, zero_division=0))
 
-    print_confusion_matrix(y_true, y_guarded, CLASSES, f"3x3 CONFUSION MATRIX ({display_name} - GUARDED)")
+    print_confusion_matrix(y_true, y_guarded, CLASSES, f"4x4 CONFUSION MATRIX ({display_name} - GUARDED)")
     print_latency_stats(latencies, display_name)
 
     print("=" * 70)
@@ -199,6 +201,7 @@ def evaluate_ollama_model(
         "macro_f1": guarded_metrics["macro_f1"],
         "weighted_f1": guarded_metrics["weighted_f1"],
         "db_write_recall": guarded_metrics["db_write_recall"],
+        "clarification_recall": guarded_metrics["clarification_recall"],
         "per_class": guarded_metrics["per_class"],
         "raw": raw_metrics,
         "cold_start_ms": cold_start_ms,
@@ -211,7 +214,7 @@ def evaluate_ollama_model(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate the fine-tuned Ollama Qwen2.5-0.5B Intent Router on test.jsonl.")
+    parser = argparse.ArgumentParser(description="Evaluate the fine-tuned 4-class Ollama Qwen2.5-0.5B Intent Router on test.jsonl.")
     parser.add_argument("--ollama-model", type=str, default=None, help="Ollama model name override (default from .env/config)")
     parser.add_argument("--compare-untuned-ollama", type=str, default=None, help="Optional extra Ollama model to compare alongside (e.g. qwen2.5:0.5b)")
     parser.add_argument(
@@ -241,11 +244,15 @@ def main():
             print(f"[WARN] Skipping comparison model '{args.compare_untuned_ollama}': {e}")
 
     if len(results) >= 2:
-        print("\n" + "=" * 92)
-        print("COMPARATIVE SUMMARY (GUARDED WITH WRITE_THRESHOLD=0.40, CONFIDENCE=0.60)")
-        print("=" * 92)
-        print(f"{'Model':<34} {'Acc':<9} {'MacroF1':<9} {'WRITE_Rec':<11} {'MT_Acc':<9} {'Mean_ms':<10} {'P95_ms':<10} {'Errs'}")
-        print("-" * 92)
+        print("\n" + "=" * 104)
+        print(
+            f"COMPARATIVE SUMMARY (CLARIFY={settings.CLARIFY_THRESHOLD:.2f}, "
+            f"WRITE={settings.WRITE_THRESHOLD:.2f}, CONF={settings.CONFIDENCE_THRESHOLD:.2f}, "
+            f"FALLBACK={settings.FALLBACK_ROUTE})"
+        )
+        print("=" * 104)
+        print(f"{'Model':<34} {'Acc':<9} {'MacroF1':<9} {'WRITE_Rec':<11} {'ASK_Rec':<9} {'MT_Acc':<9} {'Mean_ms':<10} {'P95_ms':<10} {'Errs'}")
+        print("-" * 104)
         for name, m in results.items():
             mt_str = f"{m['multi_turn_accuracy']*100:.1f}%" if m.get("multi_turn_accuracy") is not None else "n/a"
             print(
@@ -253,12 +260,13 @@ def main():
                 f"{m['accuracy']*100:>5.1f}%   "
                 f"{m['macro_f1']:<9.4f} "
                 f"{m['db_write_recall']*100:>6.1f}%    "
+                f"{m['clarification_recall']*100:>5.1f}%   "
                 f"{mt_str:<9} "
                 f"{m['latency_mean_ms']:<10.2f} "
                 f"{m['latency_p95_ms']:<10.2f} "
                 f"{m['num_errors']}"
             )
-        print("=" * 92 + "\n")
+        print("=" * 104 + "\n")
 
     if args.output_report and results:
         report_path = Path(args.output_report)

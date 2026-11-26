@@ -1,6 +1,6 @@
 # Retraining & Custom Data Pipeline Guide
 
-This guide explains how to add your own classified working data in JSON, merge or override synthetic examples, and retrain a **fresh base model** from scratch into Ollama while keeping the exact same `CHAT` / `READ` / `WRITE` output contract and `logprobs` guardrails.
+This guide explains how to add your own classified working data in JSON, merge seeds or synthetic examples across all **4 classes** (`GENERAL_CHAT` / `CHAT`, `DB_READ` / `READ`, `DB_WRITE` / `WRITE`, `CLARIFICATION_REQUIRED` / `ASK`), and retrain a **fresh base model** from scratch into Ollama with `logprobs` guardrails.
 
 ---
 
@@ -8,7 +8,7 @@ This guide explains how to add your own classified working data in JSON, merge o
 
 ```text
 data/custom/*.json(l)  ──┐
-                         ├──▶ scripts/build_dataset.py ──▶ data/processed/{train,val,test}.jsonl
+data/seed_prompts.json ──┼──▶ scripts/build_dataset.py ──▶ data/processed/{train,val,test}.jsonl
 data/raw/ (synthetic)  ──┘          │
                                     ▼
 Fresh Base HF Model ──▶ scripts/train_ollama.py (LoRA, target-token masked) ──▶ models/ollama_merged/
@@ -40,11 +40,15 @@ Add your labeled prompts to [`data/custom/working_examples.json`](data/custom/wo
     "label": "DB_WRITE"
   },
   {
-    "prompt": "How does that compare to Q4 of last year?",
-    "label": "DB_READ",
+    "prompt": "Update Kevin's phone number",
+    "label": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "prompt": "Make it +1 214 555 8721",
+    "label": "DB_WRITE",
     "chat_history": [
-      {"role": "user", "content": "Retrieve occupancy rate stats for retail."},
-      {"role": "assistant", "content": "Current retail occupancy is 91.4%."}
+      {"role": "user", "content": "Update Kevin Sauer's phone number at Microsoft"},
+      {"role": "assistant", "content": "What new phone number should I set for Kevin Sauer?"}
     ]
   },
   {
@@ -56,19 +60,22 @@ Add your labeled prompts to [`data/custom/working_examples.json`](data/custom/wo
 ```
 
 ### Key Guarantees in [`scripts/build_dataset.py`](scripts/build_dataset.py)
-- **Strict validation**: Rejects missing text, invalid labels, or malformed `chat_history` before training starts.
-- **Custom label always wins**: If an example in `data/custom/` matches a prompt in `data/raw/synthetic_prompts.json`, your custom label overrides the synthetic one.
+- **Strict validation**: Rejects missing text, invalid labels (`GENERAL_CHAT`/`CHAT`, `DB_READ`/`READ`, `DB_WRITE`/`WRITE`, `CLARIFICATION_REQUIRED`/`ASK`), or malformed `chat_history` before training starts.
+- **Custom label always wins**: If an example in `data/custom/` matches a prompt in `data/raw/synthetic_prompts.json` or `data/seed_prompts.json`, your custom label overrides it.
 - **Pinned evaluation safety**: Adding `"split": "test"` (or `"val"` / `"train"`) locks golden test cases into `test.jsonl` so they never leak into training.
-- **Optional weighting (`--custom-train-repeat`)**: If you have e.g. 50 real production examples alongside ~800 synthetic examples, `--custom-train-repeat 2` or `3` repeats your real examples inside `train.jsonl` only (never in `val.jsonl` or `test.jsonl`).
+- **Optional weighting (`--custom-train-repeat`)**: Repeats your curated real examples inside `train.jsonl` only (never in `val.jsonl` or `test.jsonl`).
 
 ---
 
 ### Preview & Validate Splits (Dry Run)
 ```bash
-# If using Option A (seeds -> Gemini expansion):
-python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 810 --dry-run
+# Option A: Curated data/seed_prompts.json (649 seeds across 4 classes) + data/custom/
+python scripts/retrain_pipeline.py --include-seeds --dry-run
 
-# If using Option B (strictly your custom JSON examples):
+# Option B: Seeds expanded via Gemini (1,080 balanced single-turn + multi-turn across 4 classes)
+python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 1080 --dry-run
+
+# Option C: Strictly your custom JSON examples
 python scripts/retrain_pipeline.py --custom-only --dry-run
 ```
 
@@ -76,20 +83,32 @@ python scripts/retrain_pipeline.py --custom-only --dry-run
 
 ## 3. Running the Retrain Pipeline
 
-### A. Validate Your Custom Data First (Dry Run)
-Checks schema, deduplication, and split counts without touching `data/processed/` or models:
+### A. Retrain Directly from `seed_prompts.json` (+ `data/custom/`, No Gemini Required)
+Trains a fresh `Qwen2.5-0.5B-Instruct`, converts to `Q8_0` GGUF, registers `intent-router-qwen2.5-0.5b-instruct:v1` in Ollama, and enforces `DB_WRITE` recall (`>= 0.95`), `CLARIFICATION_REQUIRED` recall (`>= 0.90`), and Macro F1 (`>= 0.90`):
+
 ```bash
-python scripts/retrain_pipeline.py --dry-run
+python scripts/retrain_pipeline.py \
+  --include-seeds \
+  --base-model models/hf_base/Qwen2.5-0.5B-Instruct \
+  --epochs 2 \
+  --batch-size 8 \
+  --grad-accum 2 \
+  --lr 3e-4 \
+  --lora-r 16 \
+  --outtype q8_0 \
+  --model-name intent-router-qwen2.5-0.5b-instruct \
+  --version v1
+```
+```bash
+python scripts/retrain_pipeline.py --include-seeds --base-model models/hf_base/Qwen2.5-0.5B-Instruct --epochs 2 --batch-size 8 --grad-accum 2 --lr 3e-4 --lora-r 16 --outtype q8_0 --model-name intent-router-qwen2.5-0.5b-instruct --version v1
 ```
 
-### B. Standard Retrain (Fresh `Qwen2.5-0.5B-Instruct`, Versioned Tag)
-Wipes any stale LoRA/merged adapters, trains fresh LoRA weights from the base model, converts to `Q8_0` GGUF, registers `intent-router-qwen2.5-0.5b-instruct:v1` in Ollama, and enforces `DB_WRITE` recall (`>= 0.95`) and Macro F1 (`>= 0.90`):
-
-#### If expanding seed_prompts.json via Gemini (and merging any data/custom/ examples):
+### B. Retrain With Gemini Synthetic + Multi-Turn Expansion (~1,080 Balanced Across 4 Classes)
+Adds single-turn & multi-turn `chat_history` examples on top of `seed_prompts.json` (and merges `data/custom/`):
 ```bash
 python scripts/retrain_pipeline.py \
   --regenerate-synthetic \
-  --target-total 810 \
+  --target-total 1080 \
   --base-model models/hf_base/Qwen2.5-0.5B-Instruct \
   --epochs 2 \
   --batch-size 8 \
@@ -100,38 +119,17 @@ python scripts/retrain_pipeline.py \
   --model-name intent-router-qwen2.5-0.5b-instruct \
   --version v1
 ```
-#### If training strictly on your curated working_examples.json (--custom-only):
-```bash
-python scripts/retrain_pipeline.py \
-  --custom-only \
-  --base-model models/hf_base/Qwen2.5-0.5B-Instruct \
-  --epochs 2 \
-  --batch-size 8 \
-  --grad-accum 2 \
-  --lr 3e-4 \
-  --lora-r 16 \
-  --outtype q8_0 \
-  --model-name intent-router-qwen2.5-0.5b-instruct \
-  --version v1
-```
-(Pass --include-seeds instead of --custom-only if you want to mix seed_prompts.json directly into working_examples.json without calling Gemini; change --version v2 for future releases.)
 
 ### C. Release a New Version Without Overwriting `v1`
 Pass a new `--version` tag (e.g. `v2`, `1.1.0`) so `v1` stays intact in Ollama while you test `v2`:
 ```bash
-python scripts/retrain_pipeline.py --version v2 --custom-train-repeat 2
+python scripts/retrain_pipeline.py --include-seeds --version v2 --custom-train-repeat 2
 ```
 
 ### D. Train Strictly on Your Own Custom Data (`--custom-only`)
-Once you accumulate enough curated real examples (e.g., 300+ balanced across all 3 classes), drop any synthetic data completely:
+Once you accumulate enough curated real examples across all 4 classes:
 ```bash
 python scripts/retrain_pipeline.py --custom-only --version v2
-```
-
-### E. Regenerate Synthetic Data With Expanded Seeds Before Merging
-If you also add new seed prompts to `data/seed_prompts.json`:
-```bash
-python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 900 --version v2
 ```
 
 ---
@@ -148,13 +146,14 @@ python scripts/push_to_hf.py --repo-id <your-hf-username>/intent-router-qwen2.5-
 ```
 *(Add `--private` for a private repo, or `--dry-run` to inspect the files first.)*
 
-This uploads all `.gguf` files in `models/ollama_gguf/`, the `Modelfile`, `README.md` model card, `training_metadata.json`, and `evaluation_report.json` (if present).
-
 ---
 
 ## 5. Contract Preserved Across Every Retrain
 
-No matter which base model or dataset mix you train with, the pipeline enforces the exact same runtime interface for [`app/ollama_client.py`](app/ollama_client.py) and your separate project:
+No matter which dataset mix you train with, the pipeline enforces the exact same runtime interface for [`app/ollama_client.py`](app/ollama_client.py) and your separate project:
 1. `Modelfile` bakes in `OLLAMA_CLASSIFIER_SYSTEM_PROMPT`, `ChatML` template, `temperature 0`, `num_predict 1`, and Qwen stop tokens.
-2. The model emits 1 token: `CHAT` (`GENERAL_CHAT`), `READ` (`DB_READ`), or `WRITE` (`DB_WRITE`).
-3. `logprobs` on that token give calibrated probabilities for `WRITE_THRESHOLD=0.40` and `CONFIDENCE_THRESHOLD=0.60`.
+2. The model emits 1 token: `CHAT` (`GENERAL_CHAT`), `READ` (`DB_READ`), `WRITE` (`DB_WRITE`), or `ASK` (`CLARIFICATION_REQUIRED`).
+3. `logprobs` on that token give calibrated probabilities for:
+   - `CLARIFY_THRESHOLD=0.40` (clarification beats `DB_WRITE` when stronger or tied),
+   - `WRITE_THRESHOLD=0.40` (mixed read+write safety catch),
+   - `CONFIDENCE_THRESHOLD=0.60` (`FALLBACK_ROUTE=CLARIFICATION_REQUIRED`).

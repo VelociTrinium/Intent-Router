@@ -267,7 +267,7 @@ def main():
     parser.add_argument("--custom-only", action="store_true", help="Train strictly on data/custom/ without synthetic/seed pool")
     parser.add_argument("--include-seeds", action="store_true", help="Include data/seed_prompts.json when data/raw/synthetic_prompts.json is absent")
     parser.add_argument("--regenerate-synthetic", action="store_true", help="Re-run generate_data.py via Gemini before merging")
-    parser.add_argument("--target-total", type=int, default=810, help="Target synthetic size if --regenerate-synthetic is set")
+    parser.add_argument("--target-total", type=int, default=1080, help="Target synthetic size if --regenerate-synthetic is set (default: 1080 across 4 classes)")
     parser.add_argument("--custom-train-repeat", type=int, default=1, help="Optional upsample factor for custom rows inside train.jsonl only")
     parser.add_argument("--train-ratio", type=float, default=0.75)
     parser.add_argument("--val-ratio", type=float, default=0.10)
@@ -290,8 +290,8 @@ def main():
 
     if not custom_records and not base_records:
         raise RuntimeError(
-            "No records found in data/custom/ or data/raw/. Add examples to data/custom/working_examples.json "
-            "or run generate_data.py first."
+            "No records found in data/custom/ or data/raw/. Add examples to data/custom/working_examples.json, "
+            "pass --include-seeds to build from data/seed_prompts.json, or pass --regenerate-synthetic to run generate_data.py."
         )
 
     train_rows, val_rows, test_rows, stats = build_splits(

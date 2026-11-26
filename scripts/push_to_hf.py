@@ -41,7 +41,7 @@ pipeline_tag: text-classification
 
 # {repo_id}
 
-Fine-tuned 3-class NLP intent router (`GENERAL_CHAT`, `DB_READ`, `DB_WRITE`) exported to GGUF for Ollama.
+Fine-tuned 4-class NLP intent router (`GENERAL_CHAT`, `DB_READ`, `DB_WRITE`, `CLARIFICATION_REQUIRED`) exported to GGUF for Ollama.
 
 ## Included Files
 {file_list}

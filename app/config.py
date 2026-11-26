@@ -15,15 +15,19 @@ load_dotenv(BASE_DIR / ".env")
 class Settings(BaseSettings):
     CONFIDENCE_THRESHOLD: float = Field(
         default=0.60,
-        description="Minimum confidence before fallback to GENERAL_CHAT",
+        description="Minimum confidence before fallback to FALLBACK_ROUTE",
     )
     WRITE_THRESHOLD: float = Field(
         default=0.40,
-        description="Sensitivity threshold to trigger DB_WRITE route",
+        description="Sensitivity threshold to trigger DB_WRITE when clarification is not stronger",
+    )
+    CLARIFY_THRESHOLD: float = Field(
+        default=0.40,
+        description="Sensitivity threshold to prioritize CLARIFICATION_REQUIRED over speculative writes",
     )
     FALLBACK_ROUTE: str = Field(
-        default="GENERAL_CHAT",
-        description="Default route when prediction is uncertain",
+        default="CLARIFICATION_REQUIRED",
+        description="Default route when prediction confidence is below CONFIDENCE_THRESHOLD",
     )
 
     # Ollama configuration

@@ -1,5 +1,5 @@
 """
-FastAPI service exposing production endpoints for 3-class Intent Router:
+FastAPI service exposing production endpoints for 4-class Intent Router:
 - GET /health: Service readiness, active backend, and threshold configuration
 - POST /route: Fast intent routing endpoint with safety guardrails & probabilities
 """
@@ -26,12 +26,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="3-Class NLP Intent Router",
+    title="4-Class NLP Intent Router",
     description=(
         "Production-grade intent classification router classifying user prompts into "
-        "GENERAL_CHAT, DB_READ, or DB_WRITE with calibrated probabilities and safety guardrails."
+        "GENERAL_CHAT, DB_READ, DB_WRITE, or CLARIFICATION_REQUIRED with calibrated "
+        "probabilities and safety guardrails."
     ),
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -57,6 +58,8 @@ def health():
         model_loaded=engine.router.is_ready(),
         confidence_threshold=settings.CONFIDENCE_THRESHOLD,
         write_threshold=settings.WRITE_THRESHOLD,
+        clarify_threshold=settings.CLARIFY_THRESHOLD,
+        fallback_route=settings.FALLBACK_ROUTE,
         classes=VALID_ROUTES
     )
 
@@ -64,8 +67,8 @@ def health():
 @app.post("/route", response_model=RouteResponse, tags=["Routing"])
 def route_prompt(request: RouteRequest):
     """
-    Classifies a user prompt into GENERAL_CHAT, DB_READ, or DB_WRITE.
-    Applies write sensitivity guardrail and confidence fallback rules.
+    Classifies a user prompt into GENERAL_CHAT, DB_READ, DB_WRITE, or CLARIFICATION_REQUIRED.
+    Applies clarification-priority, write-sensitivity, and confidence-fallback guardrails.
     """
     global engine
     if engine is None:

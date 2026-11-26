@@ -4,11 +4,11 @@ End-to-End Retrain & Ollama Release Pipeline.
 Takes your custom working examples (`data/custom/*.json` / `.jsonl`), optionally
 merges or regenerates synthetic data, fine-tunes a FRESH base model from scratch,
 exports to GGUF (`Q8_0` by default), registers the model in Ollama preserving the
-1-token `CHAT`/`READ`/`WRITE` output contract, and verifies evaluation thresholds.
+1-token `CHAT`/`READ`/`WRITE`/`ASK` output contract, and verifies evaluation thresholds.
 
 Example:
-    python scripts/retrain_pipeline.py --version v1
-    python scripts/retrain_pipeline.py --model-name intent-router-qwen2.5-0.5b-instruct --version v2
+    python scripts/retrain_pipeline.py --include-seeds --version v1
+    python scripts/retrain_pipeline.py --regenerate-synthetic --version v1
 """
 
 import os
@@ -52,7 +52,7 @@ def main():
     parser.add_argument("--custom-only", action="store_true", help="Train strictly on data/custom/ without synthetic data")
     parser.add_argument("--include-seeds", action="store_true", help="Include data/seed_prompts.json when data/raw/synthetic_prompts.json is absent")
     parser.add_argument("--regenerate-synthetic", action="store_true", help="Re-run Gemini synthetic data generation before merging")
-    parser.add_argument("--target-total", type=int, default=810, help="Target synthetic dataset size when --regenerate-synthetic is set")
+    parser.add_argument("--target-total", type=int, default=1080, help="Target synthetic dataset size across 4 classes when --regenerate-synthetic is set")
     parser.add_argument("--custom-train-repeat", type=int, default=1, help="Upsample factor for custom rows inside train.jsonl")
 
     # Fresh base model training options
@@ -72,6 +72,7 @@ def main():
     # Evaluation gate options
     parser.add_argument("--skip-eval", action="store_true", help="Skip held-out test.jsonl evaluation after creating Ollama model")
     parser.add_argument("--min-write-recall", type=float, default=0.95, help="Minimum guarded DB_WRITE recall gate (0..1)")
+    parser.add_argument("--min-clarify-recall", type=float, default=0.90, help="Minimum guarded CLARIFICATION_REQUIRED recall gate (0..1)")
     parser.add_argument("--min-macro-f1", type=float, default=0.90, help="Minimum guarded Macro F1 gate (0..1)")
     parser.add_argument("--dry-run", action="store_true", help="Validate custom data and print planned commands without training/writing")
     args = parser.parse_args()
@@ -132,11 +133,17 @@ def main():
             report = json.loads(report_path.read_text(encoding="utf-8"))
             m = report.get("ollama", {})
             w_rec = float(m.get("db_write_recall", 0.0))
+            c_rec = float(m.get("clarification_recall", 0.0))
             m_f1 = float(m.get("macro_f1", 0.0))
-            print(f"\n[GATE CHECK] DB_WRITE Recall={w_rec:.4f} (min {args.min_write_recall:.2f}) | Macro F1={m_f1:.4f} (min {args.min_macro_f1:.2f})")
-            if w_rec < args.min_write_recall or m_f1 < args.min_macro_f1:
+            print(
+                f"\n[GATE CHECK] DB_WRITE Recall={w_rec:.4f} (min {args.min_write_recall:.2f}) | "
+                f"CLARIFICATION Recall={c_rec:.4f} (min {args.min_clarify_recall:.2f}) | "
+                f"Macro F1={m_f1:.4f} (min {args.min_macro_f1:.2f})"
+            )
+            if w_rec < args.min_write_recall or c_rec < args.min_clarify_recall or m_f1 < args.min_macro_f1:
                 raise SystemExit(
-                    f"[FAIL] Evaluation gate not met: DB_WRITE recall={w_rec:.4f}, Macro F1={m_f1:.4f}"
+                    f"[FAIL] Evaluation gate not met: DB_WRITE recall={w_rec:.4f}, "
+                    f"CLARIFICATION recall={c_rec:.4f}, Macro F1={m_f1:.4f}"
                 )
             print("[OK] Evaluation quality gates passed!")
 

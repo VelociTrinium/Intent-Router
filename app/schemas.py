@@ -1,24 +1,30 @@
 """
-Pydantic request and response schemas for 3-class NLP intent routing API.
+Pydantic request and response schemas for 4-class NLP intent routing API.
 Classes:
-- GENERAL_CHAT: General conversation, conceptual questions, syntax help, hypothetical discussions.
-- DB_READ: Fetch, search, filter, count, aggregate, or inspect live records/schema.
-- DB_WRITE: Insert, update, delete, modify, or mutate records/state in a database.
+- GENERAL_CHAT: General conversation, conceptual questions, syntax help, drafting without DB save.
+- DB_READ: Clear, specific requests to fetch, search, filter, count, aggregate, or inspect records.
+- DB_WRITE: Clear, complete requests to insert, update, log, schedule, or mixed read+write actions.
+- CLARIFICATION_REQUIRED: Vague, incomplete, pronoun-dependent, ambiguous, or destructive requests needing clarification.
 """
 
 from typing import List, Optional, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
-RouteName = Literal["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
+RouteName = Literal["GENERAL_CHAT", "DB_READ", "DB_WRITE", "CLARIFICATION_REQUIRED"]
 
-VALID_ROUTES: List[RouteName] = ["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
+VALID_ROUTES: List[RouteName] = [
+    "GENERAL_CHAT",
+    "DB_READ",
+    "DB_WRITE",
+    "CLARIFICATION_REQUIRED",
+]
 
 
 class RouteRequest(BaseModel):
     prompt: str = Field(..., min_length=1, description="Incoming English user prompt to route")
     chat_history: Optional[List[Dict[str, Any]]] = Field(
         default=None,
-        description="Optional preceding conversation turns for future multi-turn support"
+        description="Optional preceding conversation turns for multi-turn context resolution"
     )
 
     model_config = {
@@ -37,7 +43,7 @@ class RouteResponse(BaseModel):
     confidence: float = Field(..., description="Confidence score associated with the routing decision")
     probabilities: Dict[str, float] = Field(
         ...,
-        description="Probability distribution across GENERAL_CHAT, DB_READ, and DB_WRITE"
+        description="Probability distribution across GENERAL_CHAT, DB_READ, DB_WRITE, and CLARIFICATION_REQUIRED"
     )
     fallback_triggered: bool = Field(
         default=False,
@@ -53,4 +59,6 @@ class HealthResponse(BaseModel):
     model_loaded: bool
     confidence_threshold: float
     write_threshold: float
+    clarify_threshold: float
+    fallback_route: str
     classes: List[str]

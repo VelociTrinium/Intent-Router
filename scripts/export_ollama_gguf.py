@@ -1,7 +1,7 @@
 """
 Exports the merged HuggingFace Qwen2.5-0.5B-Instruct intent classifier (`models/ollama_merged/`)
 to standalone GGUF (default Q8_0 via llama.cpp `convert_hf_to_gguf.py`), writes an
-Ollama Modelfile with ChatML template preserving the 1-token CHAT/READ/WRITE contract,
+Ollama Modelfile with ChatML template preserving the 1-token CHAT/READ/WRITE/ASK contract,
 and registers the versioned model in local Ollama.
 """
 
