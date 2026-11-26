@@ -59,8 +59,8 @@ try:
             description="Base URL for Ollama service"
         )
         OLLAMA_MODEL: str = Field(
-            default="intent-router",
-            description="Fine-tuned Ollama classifier model name"
+            default="intent-router-qwen2.5-0.5b-instruct:v1",
+            description="Fine-tuned Ollama classifier model name (with optional :version tag)"
         )
         OLLAMA_MODE: Literal["single_token", "json_schema"] = Field(
             default="single_token",
@@ -94,7 +94,7 @@ except ImportError:
             self.MODEL_PATH: Path = BASE_DIR / "models" / "intent_router"
             self.BASELINE_MODEL_PATH: Path = BASE_DIR / "models" / "baseline_tfidf" / "baseline_model.joblib"
             self.OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-            self.OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "intent-router")
+            self.OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "intent-router-qwen2.5-0.5b-instruct:v1")
             self.OLLAMA_MODE: str = os.getenv("OLLAMA_MODE", "single_token").lower()
             self.OLLAMA_TIMEOUT_SEC: float = float(os.getenv("OLLAMA_TIMEOUT_SEC", "15.0"))
             self.API_HOST: str = os.getenv("API_HOST", "0.0.0.0")

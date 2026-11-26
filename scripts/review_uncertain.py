@@ -13,17 +13,15 @@ Saves verified corrections directly into data/processed/train.jsonl.
 Can also scan existing datasets with a preliminary baseline model to find borderline cases.
 """
 
-import sys
 import json
 import argparse
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 try:
     from rich.console import Console
     from rich.panel import Panel
     from rich.prompt import Prompt
-    from rich.table import Table
     console = Console()
     HAS_RICH = True
 except ImportError:

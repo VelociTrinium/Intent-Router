@@ -35,7 +35,8 @@ TOKEN_TO_ROUTE = {
 def classify_intent(
     prompt: str,
     chat_history: Optional[List[Dict[str, Any]]] = None,
-    model: str = "intent-router",
+    model: str = "intent-router-qwen2.5-0.5b-instruct:v1",
+    version: Optional[str] = None,
     base_url: str = "http://127.0.0.1:11434",
     write_threshold: float = 0.40,
     confidence_threshold: float = 0.60,
@@ -51,6 +52,13 @@ def classify_intent(
     """
     t0 = time.perf_counter()
 
+    if version:
+        clean_ver = version.strip().lstrip(":")
+        base_name = model.split(":", 1)[0]
+        model_ref = f"{base_name}:{clean_ver}" if clean_ver else base_name
+    else:
+        model_ref = model
+
     messages: List[Dict[str, str]] = []
     if chat_history:
         for turn in chat_history[-max_history_turns:]:
@@ -62,7 +70,7 @@ def classify_intent(
     messages.append({"role": "user", "content": prompt.strip()})
 
     payload = {
-        "model": model,
+        "model": model_ref,
         "messages": messages,
         "stream": False,
         "keep_alive": keep_alive,
@@ -131,7 +139,7 @@ def classify_intent(
         "confidence": round(final_confidence, 4),
         "probabilities": probabilities,
         "fallback_triggered": fallback_triggered,
-        "model": model,
+        "model": model_ref,
         "latency_ms": elapsed_ms,
     }
 

@@ -162,7 +162,8 @@ def test_standalone_ollama_client(monkeypatch):
         "urlopen",
         lambda req, timeout=15.0: FakeHttpResp(json.dumps(mock_payload).encode("utf-8")),
     )
-    res = classify_intent("Check and update lead #402")
+    res = classify_intent("Check and update lead #402", version="v2")
+    assert res["model"] == "intent-router-qwen2.5-0.5b-instruct:v2"
     assert res["raw_prediction"] == "DB_READ"
     assert res["route"] == "DB_WRITE"
     assert res["fallback_triggered"] is True

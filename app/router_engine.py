@@ -256,7 +256,7 @@ class OllamaRouter(BaseRouter):
                 return False
             models = [m.get("name", "") for m in r.json().get("models", [])]
             target = self.model_name
-            return any(m == target or m == f"{target}:latest" or m.split(":")[0] == target for m in models)
+            return any(m == target or (":" not in target and m == f"{target}:latest") for m in models)
         except Exception:
             return False
 

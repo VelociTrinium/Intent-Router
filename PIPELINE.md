@@ -64,6 +64,17 @@ Add your labeled prompts to [`data/custom/working_examples.json`](data/custom/wo
 
 ---
 
+### Preview & Validate Splits (Dry Run)
+```bash
+# If using Option A (seeds -> Gemini expansion):
+python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 810 --dry-run
+
+# If using Option B (strictly your custom JSON examples):
+python scripts/retrain_pipeline.py --custom-only --dry-run
+```
+
+---
+
 ## 3. Running the Retrain Pipeline
 
 ### A. Validate Your Custom Data First (Dry Run)
@@ -72,22 +83,50 @@ Checks schema, deduplication, and split counts without touching `data/processed/
 python scripts/retrain_pipeline.py --dry-run
 ```
 
-### B. Standard Retrain (Custom + Synthetic Pool, Fresh `Qwen2.5-0.5B-Instruct`)
-Wipes any stale LoRA/merged adapters, trains fresh LoRA weights from the base model, converts to `Q8_0` GGUF, updates `intent-router` in Ollama, and enforces `DB_WRITE` recall (`>= 0.95`) and Macro F1 (`>= 0.90`):
-```bash
-python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router
-```
+### B. Standard Retrain (Fresh `Qwen2.5-0.5B-Instruct`, Versioned Tag)
+Wipes any stale LoRA/merged adapters, trains fresh LoRA weights from the base model, converts to `Q8_0` GGUF, registers `intent-router-qwen2.5-0.5b-instruct:v1` in Ollama, and enforces `DB_WRITE` recall (`>= 0.95`) and Macro F1 (`>= 0.90`):
 
-### C. Test a New Candidate Tag Before Overwriting Production
-Register as `intent-router-v2` first so your running `intent-router` stays untouched until you verify:
+#### If expanding seed_prompts.json via Gemini (and merging any data/custom/ examples):
 ```bash
-python scripts/retrain_pipeline.py --model-name intent-router-v2 --custom-train-repeat 2
+python scripts/retrain_pipeline.py \
+  --regenerate-synthetic \
+  --target-total 810 \
+  --base-model models/hf_base/Qwen2.5-0.5B-Instruct \
+  --epochs 2 \
+  --batch-size 8 \
+  --grad-accum 2 \
+  --lr 3e-4 \
+  --lora-r 16 \
+  --outtype q8_0 \
+  --model-name intent-router-qwen2.5-0.5b-instruct \
+  --version v1
+```
+#### If training strictly on your curated working_examples.json (--custom-only):
+```bash
+python scripts/retrain_pipeline.py \
+  --custom-only \
+  --base-model models/hf_base/Qwen2.5-0.5B-Instruct \
+  --epochs 2 \
+  --batch-size 8 \
+  --grad-accum 2 \
+  --lr 3e-4 \
+  --lora-r 16 \
+  --outtype q8_0 \
+  --model-name intent-router-qwen2.5-0.5b-instruct \
+  --version v1
+```
+(Pass --include-seeds instead of --custom-only if you want to mix seed_prompts.json directly into working_examples.json without calling Gemini; change --version v2 for future releases.)
+
+### C. Release a New Version Without Overwriting `v1`
+Pass a new `--version` tag (e.g. `v2`, `1.1.0`) so `v1` stays intact in Ollama while you test `v2`:
+```bash
+python scripts/retrain_pipeline.py --version v2 --custom-train-repeat 2
 ```
 
 ### D. Train Strictly on Your Own Custom Data (`--custom-only`)
-Once you accumulate enough curated real examples (e.g., 300+ balanced across all 3 classes), drop the synthetic data completely:
+Once you accumulate enough curated real examples (e.g., 300+ balanced across all 3 classes), drop any synthetic data completely:
 ```bash
-python scripts/retrain_pipeline.py --custom-only --model-name intent-router
+python scripts/retrain_pipeline.py --custom-only --version v2
 ```
 
 ### E. Swap to a Different Fresh Base Model
@@ -104,7 +143,23 @@ python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 900 --m
 
 ---
 
-## 4. Contract Preserved Across Every Retrain
+## 4. Pushing the Exported GGUF Model to Hugging Face
+
+Ensure `HF_TOKEN=...` is set in `.env`, then run:
+```bash
+# Optional dry run first to inspect files:
+python scripts/push_to_hf.py --repo-id <your-hf-username>/intent-router-qwen2.5-0.5b-instruct-gguf --tag v1.0.0 --dry-run
+
+# Upload .gguf, Modelfile, README.md model card, training_metadata.json, and evaluation_report.json with release tag:
+python scripts/push_to_hf.py --repo-id <your-hf-username>/intent-router-qwen2.5-0.5b-instruct-gguf --tag v1.0.0
+```
+*(Add `--private` for a private repo, or `--dry-run` to inspect the files first.)*
+
+This uploads all `.gguf` files in `models/ollama_gguf/`, the `Modelfile`, `README.md` model card, `training_metadata.json`, and `evaluation_report.json` (if present).
+
+---
+
+## 5. Contract Preserved Across Every Retrain
 
 No matter which base model or dataset mix you train with, the pipeline enforces the exact same runtime interface for [`app/ollama_client.py`](app/ollama_client.py) and your separate project:
 1. `Modelfile` bakes in `OLLAMA_CLASSIFIER_SYSTEM_PROMPT`, `temperature 0`, `num_predict 1`, and architecture-matched stop tokens.

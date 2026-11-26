@@ -7,7 +7,8 @@ exports to GGUF (`Q8_0` by default), registers the model in Ollama preserving th
 1-token `CHAT`/`READ`/`WRITE` output contract, and verifies evaluation thresholds.
 
 Example:
-    python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router
+    python scripts/retrain_pipeline.py --version v1
+    python scripts/retrain_pipeline.py --model-name intent-router-qwen2.5-0.5b-instruct --version v2
 """
 
 import os
@@ -20,6 +21,12 @@ from typing import List
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = Path(__file__).resolve().parent
+
+sys.path = [p for p in sys.path if Path(p).resolve() != SCRIPTS_DIR.resolve()]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from scripts.export_ollama_gguf import resolve_ollama_ref
 
 
 def _run_step(title: str, cmd: List[str], dry_run: bool = False):
@@ -56,7 +63,8 @@ def main():
     parser.add_argument("--lora-r", type=int, default=16)
 
     # Export & Ollama registration options
-    parser.add_argument("--model-name", type=str, default="intent-router", help="Ollama model tag to create/update")
+    parser.add_argument("--model-name", type=str, default="intent-router-qwen2.5-0.5b-instruct", help="Ollama model repository name")
+    parser.add_argument("--version", type=str, default="v1", help="Ollama model version tag (e.g. v1, 1.0.0; empty to omit)")
     parser.add_argument("--outtype", choices=["q8_0", "f16", "bf16", "f32"], default="q8_0", help="GGUF tensor precision")
     parser.add_argument("--ollama-quantize", type=str, default=None, help="Optional `ollama create -q` target (e.g. q4_K_M)")
 
@@ -96,14 +104,16 @@ def main():
     _run_step(f"Step 2/4: Fine-tune fresh base model ({args.base_model})", train_cmd, dry_run=args.dry_run)
 
     # 3. Export GGUF & register in Ollama
+    ollama_ref, _ = resolve_ollama_ref(args.model_name, args.version)
     export_cmd = [
         py, str(SCRIPTS_DIR / "export_ollama_gguf.py"),
         "--outtype", args.outtype,
         "--model-name", args.model_name,
+        "--version", args.version,
     ]
     if args.ollama_quantize:
         export_cmd.extend(["--ollama-quantize", args.ollama_quantize])
-    _run_step(f"Step 3/4: Export {args.outtype.upper()} GGUF & create Ollama '{args.model_name}'", export_cmd, dry_run=args.dry_run)
+    _run_step(f"Step 3/4: Export {args.outtype.upper()} GGUF & create Ollama '{ollama_ref}'", export_cmd, dry_run=args.dry_run)
 
     # 4. Evaluate in Ollama & enforce quality gates
     if not args.skip_eval:
@@ -111,11 +121,11 @@ def main():
         eval_cmd = [
             py, "-u", str(SCRIPTS_DIR / "evaluate.py"),
             "--backend", "ollama",
-            "--ollama-model", args.model_name,
+            "--ollama-model", ollama_ref,
             "--ollama-mode", "single_token",
             "--output-report", str(report_path),
         ]
-        _run_step(f"Step 4/4: Evaluate '{args.model_name}' on test.jsonl", eval_cmd, dry_run=args.dry_run)
+        _run_step(f"Step 4/4: Evaluate '{ollama_ref}' on test.jsonl", eval_cmd, dry_run=args.dry_run)
 
         if not args.dry_run and report_path.exists():
             report = json.loads(report_path.read_text(encoding="utf-8"))

@@ -6,13 +6,14 @@ tailored Ollama Modelfile preserving the 1-token CHAT/READ/WRITE contract, and
 registers the model in local Ollama.
 """
 
+import re
 import sys
 import json
 import subprocess
 import argparse
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -159,13 +160,30 @@ def write_modelfile(modelfile_path: Path, gguf_filename: str, chat_family: str):
     print(f"[OK] Wrote Modelfile ({chat_family}) to {modelfile_path}")
 
 
+def resolve_ollama_ref(model_name: str, version: Optional[str] = None) -> Tuple[str, str]:
+    """
+    Combines `model_name` and optional `version` into an Ollama tag
+    (e.g. 'intent-router-qwen2.5-0.5b-instruct:v1') and returns a
+    Windows-safe filename stem (no ':').
+    """
+    clean_name = model_name.strip()
+    clean_ver = (version or "").strip().lstrip(":")
+    if clean_ver and ":" not in clean_name:
+        ollama_ref = f"{clean_name}:{clean_ver}"
+    else:
+        ollama_ref = clean_name
+    safe_stem = re.sub(r"[^A-Za-z0-9._-]+", "-", ollama_ref).strip("-")
+    return ollama_ref, safe_stem
+
+
 def main():
     parser = argparse.ArgumentParser(description="Convert merged HF classifier to GGUF and register in Ollama.")
     parser.add_argument("--merged-dir", type=Path, default=DEFAULT_MERGED_DIR, help="Path to merged HF model")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR, help="Output directory for GGUF & Modelfile")
     parser.add_argument("--outtype", choices=["q8_0", "f16", "bf16", "f32"], default="q8_0", help="GGUF tensor type (default: q8_0)")
     parser.add_argument("--ollama-quantize", type=str, default=None, help="Optional `ollama create -q` target (e.g. q4_K_M)")
-    parser.add_argument("--model-name", type=str, default="intent-router", help="Ollama model name to register")
+    parser.add_argument("--model-name", type=str, default="intent-router-qwen2.5-0.5b-instruct", help="Ollama model repository name")
+    parser.add_argument("--version", type=str, default="v1", help="Ollama model version tag (e.g. v1, 1.0.0, latest; empty to omit)")
     parser.add_argument("--skip-ollama-create", action="store_true", help="Only export GGUF + Modelfile without calling ollama create")
     args = parser.parse_args()
 
@@ -175,8 +193,9 @@ def main():
             "Run `python scripts/train.py --backend ollama` first."
         )
 
+    ollama_ref, safe_stem = resolve_ollama_ref(args.model_name, args.version)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    gguf_filename = f"{args.model_name}-{args.outtype}.gguf"
+    gguf_filename = f"{safe_stem}-{args.outtype}.gguf"
     gguf_path = args.out_dir / gguf_filename
 
     converter = ensure_converter(CONVERTER_PATH)
@@ -196,13 +215,13 @@ def main():
         print("[INFO] --skip-ollama-create set. Skipping `ollama create`.")
         return
 
-    ollama_cmd = ["ollama", "create", args.model_name, "-f", str(modelfile_path)]
+    ollama_cmd = ["ollama", "create", ollama_ref, "-f", str(modelfile_path)]
     if args.ollama_quantize:
         ollama_cmd.extend(["-q", args.ollama_quantize])
 
     print(f"[INFO] Registering model in Ollama: {' '.join(ollama_cmd)}")
     subprocess.run(ollama_cmd, cwd=str(args.out_dir), check=True)
-    print(f"[OK] Model '{args.model_name}' registered in Ollama!")
+    print(f"[OK] Model '{ollama_ref}' registered in Ollama!")
 
 
 if __name__ == "__main__":

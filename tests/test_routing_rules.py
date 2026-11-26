@@ -236,3 +236,80 @@ def test_export_template_detection(tmp_path):
     d2.mkdir()
     (d2 / "training_metadata.json").write_text(json.dumps({"chat_family": "chatml"}), encoding="utf-8")
     assert detect_template_family(d2) == "chatml"
+
+
+def test_resolve_ollama_ref_and_windows_safe_stem():
+    from scripts.export_ollama_gguf import resolve_ollama_ref
+
+    ref, stem = resolve_ollama_ref("intent-router-qwen2.5-0.5b-instruct", "v1")
+    assert ref == "intent-router-qwen2.5-0.5b-instruct:v1"
+    assert stem == "intent-router-qwen2.5-0.5b-instruct-v1"
+    assert ":" not in stem
+
+    ref2, stem2 = resolve_ollama_ref("intent-router-qwen2.5-0.5b-instruct:2.0", "v9")
+    assert ref2 == "intent-router-qwen2.5-0.5b-instruct:2.0"
+    assert stem2 == "intent-router-qwen2.5-0.5b-instruct-2.0"
+
+    ref3, stem3 = resolve_ollama_ref("intent-router-qwen2.5-0.5b-instruct", "")
+    assert ref3 == "intent-router-qwen2.5-0.5b-instruct"
+    assert stem3 == "intent-router-qwen2.5-0.5b-instruct"
+
+
+def test_push_to_hf_dry_run(tmp_path, monkeypatch):
+    import sys
+    from scripts import push_to_hf
+
+    gguf_dir = tmp_path / "gguf"
+    gguf_dir.mkdir()
+    (gguf_dir / "intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf").write_bytes(b"GGUF")
+    (gguf_dir / "Modelfile").write_text("FROM ./intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["push_to_hf.py", "--repo-id", "user/test-gguf", "--gguf-dir", str(gguf_dir), "--tag", "v1.0.0", "--dry-run"],
+    )
+    push_to_hf.main()
+    assert (gguf_dir / "README.md").exists()
+    assert "user/test-gguf" in (gguf_dir / "README.md").read_text(encoding="utf-8")
+
+
+def test_push_to_hf_creates_tag(tmp_path, monkeypatch):
+    import sys
+    import huggingface_hub
+    from scripts import push_to_hf
+
+    gguf_dir = tmp_path / "gguf"
+    gguf_dir.mkdir()
+    (gguf_dir / "intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf").write_bytes(b"GGUF")
+    (gguf_dir / "Modelfile").write_text("FROM ./intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf\n", encoding="utf-8")
+
+    calls = {"upload": [], "tag": []}
+
+    class FakeHfApi:
+        def __init__(self, token=None):
+            self.token = token
+
+        def create_repo(self, repo_id, repo_type="model", private=False, exist_ok=False):
+            calls["repo"] = (repo_id, repo_type, private, exist_ok)
+
+        def upload_file(self, path_or_fileobj, path_in_repo, repo_id, repo_type="model", commit_message=""):
+            calls["upload"].append((path_in_repo, repo_id))
+
+        def create_tag(self, repo_id, *, tag, tag_message=None, repo_type=None, exist_ok=False):
+            calls["tag"].append((repo_id, tag, tag_message, repo_type, exist_ok))
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", FakeHfApi)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "push_to_hf.py",
+            "--repo-id", "user/test-gguf",
+            "--gguf-dir", str(gguf_dir),
+            "--hf-token", "hf_test_token_value",
+            "--tag", "v1.0.0",
+        ],
+    )
+    push_to_hf.main()
+    assert ("user/test-gguf", "v1.0.0", "Release v1.0.0", "model", True) in calls["tag"]

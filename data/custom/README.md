@@ -62,5 +62,5 @@ One JSON object per line with `"prompt"` (or `"text"`) and `"label"` (or `"inten
 python scripts/build_dataset.py --dry-run
 
 # Full retrain from a fresh base model -> Q8_0 GGUF -> Ollama -> Evaluation
-python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router
+python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router-qwen2.5-0.5b-instruct --version v1
 ```

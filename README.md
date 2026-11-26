@@ -38,6 +38,7 @@ intent-router/
 │   ├── train.py                  # Unified trainer (--backend ollama | setfit | baseline)
 │   ├── train_ollama.py           # CPU/GPU LoRA trainer for Qwen2.5-0.5B-Instruct (1-token)
 │   ├── export_ollama_gguf.py     # Converts merged weights to Q8_0 GGUF & creates Ollama model
+│   ├── push_to_hf.py             # Uploads exported GGUF, Modelfile, and metrics to Hugging Face Hub
 │   ├── train_setfit.py           # SetFit contrastive benchmark trainer
 │   ├── train_baseline.py         # TF-IDF + LogisticRegression benchmark trainer
 │   └── evaluate.py               # Benchmarks accuracy, Macro F1, DB_WRITE recall, latency
@@ -86,7 +87,7 @@ ROUTER_BACKEND=ollama
 CONFIDENCE_THRESHOLD=0.60
 WRITE_THRESHOLD=0.40
 OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=intent-router
+OLLAMA_MODEL=intent-router-qwen2.5-0.5b-instruct:v1
 OLLAMA_MODE=single_token
 ```
 
@@ -107,11 +108,14 @@ python scripts/train.py --backend ollama --epochs 2 --batch-size 8 --grad-accum 
 ```
 Saves the best LoRA checkpoint to `models/ollama_lora/` and merges weights to `models/ollama_merged/`.
 
-### 3. Export to `Q8_0` GGUF & Register in Ollama
+### 3. Export to `Q8_0` GGUF, Register in Ollama & Push to Hugging Face
 ```bash
-python scripts/export_ollama_gguf.py --outtype q8_0 --model-name intent-router
+python scripts/export_ollama_gguf.py --outtype q8_0 --model-name intent-router-qwen2.5-0.5b-instruct --version v1
+
+# Optional: push the exported .gguf + Modelfile to Hugging Face Hub (uses HF_TOKEN from .env)
+python scripts/push_to_hf.py --repo-id <your-hf-username>/intent-router-qwen2.5-0.5b-instruct-gguf --tag v1.0.0
 ```
-Produces `models/ollama_gguf/intent-router-q8_0.gguf` (~525 MB on disk, ~531 MB in Ollama) and `models/ollama_gguf/Modelfile` with baked-in system prompt, ChatML template, `temperature 0`, and `num_predict 1`, then runs `ollama create intent-router`.
+Produces `models/ollama_gguf/intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf` and `models/ollama_gguf/Modelfile` with baked-in system prompt, ChatML template, `temperature 0`, and `num_predict 1`, then runs `ollama create intent-router-qwen2.5-0.5b-instruct:v1`.
 
 ### 4. Adding Custom Working Data & Retraining From a Fresh Base Model
 
@@ -121,8 +125,8 @@ Drop your own classified prompts into [`data/custom/working_examples.json`](data
 # Preview split & validate custom JSON
 python scripts/retrain_pipeline.py --dry-run
 
-# Retrain fresh base model and publish to Ollama
-python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router
+# Retrain fresh base model and publish versioned tag to Ollama
+python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router-qwen2.5-0.5b-instruct --version v1
 ```
 
 See **[PIPELINE.md](PIPELINE.md)** and **[data/custom/README.md](data/custom/README.md)** for full JSON schemas, `--custom-only`, `--custom-train-repeat`, candidate tags, and swapping base models.

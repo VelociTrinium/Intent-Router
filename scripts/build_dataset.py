@@ -141,8 +141,8 @@ def load_custom_directory(custom_dir: Path, explicit_files: Optional[List[Path]]
     return all_custom
 
 
-def load_base_pool() -> List[Dict[str, Any]]:
-    """Loads existing raw synthetic/seed pool + verified reviews, or falls back to seed_prompts.json."""
+def load_base_pool(include_seeds: bool = False) -> List[Dict[str, Any]]:
+    """Loads existing raw synthetic pool + verified reviews (and seed_prompts.json only if include_seeds=True)."""
     out: List[Dict[str, Any]] = []
     if RAW_FILE.exists():
         with open(RAW_FILE, "r", encoding="utf-8") as f:
@@ -151,7 +151,7 @@ def load_base_pool() -> List[Dict[str, Any]]:
             rec = _normalize_record(item, f"{RAW_FILE.name}[{idx}]")
             rec["_is_custom"] = False
             out.append(rec)
-    elif SEED_FILE.exists():
+    elif include_seeds and SEED_FILE.exists():
         loaded = load_custom_file(SEED_FILE)
         for rec in loaded:
             rec["_is_custom"] = False
@@ -275,6 +275,7 @@ def main():
     parser = argparse.ArgumentParser(description="Build clean train/val/test JSONL splits from custom + synthetic data.")
     parser.add_argument("--custom-file", type=Path, action="append", default=None, help="Explicit custom JSON/JSONL file(s) (defaults to all data/custom/*.json*)")
     parser.add_argument("--custom-only", action="store_true", help="Train strictly on data/custom/ without synthetic/seed pool")
+    parser.add_argument("--include-seeds", action="store_true", help="Include data/seed_prompts.json when data/raw/synthetic_prompts.json is absent")
     parser.add_argument("--regenerate-synthetic", action="store_true", help="Re-run generate_data.py via Gemini before merging")
     parser.add_argument("--target-total", type=int, default=810, help="Target synthetic size if --regenerate-synthetic is set")
     parser.add_argument("--custom-train-repeat", type=int, default=1, help="Optional upsample factor for custom rows inside train.jsonl only")
@@ -296,7 +297,7 @@ def main():
         subprocess.run(gen_cmd, check=True)
 
     custom_records = load_custom_directory(CUSTOM_DIR, explicit_files=args.custom_file)
-    base_records = [] if args.custom_only else load_base_pool()
+    base_records = [] if args.custom_only else load_base_pool(include_seeds=args.include_seeds)
 
     if not custom_records and not base_records:
         raise RuntimeError(
