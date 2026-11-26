@@ -48,24 +48,6 @@ def normalize_chat_history(
     return cleaned
 
 
-def format_text_with_history(
-    prompt: str,
-    chat_history: Optional[List[Dict[str, Any]]] = None,
-    max_turns: int = 4,
-) -> str:
-    """
-    Formats prompt with optional recent chat_history for flat-text models (SetFit, TF-IDF).
-    Returns `prompt` unchanged when `chat_history` is empty or None.
-    """
-    turns = normalize_chat_history(chat_history, max_turns=max_turns)
-    clean_prompt = prompt.strip()
-    if not turns:
-        return clean_prompt
-    history_lines = [f"{t['role'].capitalize()}: {t['content']}" for t in turns]
-    history_lines.append(f"User: {clean_prompt}")
-    return "\n".join(history_lines)
-
-
 def build_ollama_messages(
     prompt: str,
     chat_history: Optional[List[Dict[str, Any]]] = None,

@@ -19,10 +19,10 @@ import pytest
 from fastapi.testclient import TestClient
 import app.main as main_module
 from app.main import app
-from app.router_engine import BaseRouter, RouterEngine
+from app.router_engine import RouterEngine
 
 
-class MockApiRouter(BaseRouter):
+class MockApiRouter:
     def predict_probabilities(
         self,
         prompt: str,
@@ -42,8 +42,7 @@ class MockApiRouter(BaseRouter):
 
 @pytest.fixture
 def client(monkeypatch):
-    test_engine = RouterEngine(backend_override="baseline")
-    test_engine.router = MockApiRouter()
+    test_engine = RouterEngine(router=MockApiRouter())
     monkeypatch.setattr(main_module, "engine", test_engine)
     return TestClient(app)
 

@@ -1,8 +1,8 @@
 """
-Model Evaluation and Benchmark Suite for 3-class NLP Intent Router.
-Evaluates SetFit, TF-IDF Baseline, and Ollama backends on data/processed/test.jsonl
-(both single-turn and multi-turn chat_history samples) and outputs:
-- Raw model accuracy/F1 vs Guarded RouterEngine accuracy/F1 (with WRITE_THRESHOLD=0.40, CONFIDENCE_THRESHOLD=0.60)
+Evaluation Suite for the fine-tuned Ollama Qwen2.5-0.5B Intent Router.
+Evaluates single-turn and multi-turn test samples from `data/processed/test.jsonl`
+(falling back to `data/seed_prompts.json` if absent) and outputs:
+- Raw model accuracy/F1 vs Guarded RouterEngine accuracy/F1 (WRITE_THRESHOLD=0.40, CONFIDENCE_THRESHOLD=0.60)
 - Per-class Precision, Recall, and F1-score (highlighting DB_WRITE Recall)
 - Multi-turn subset accuracy
 - Full 3x3 Confusion Matrix
@@ -15,9 +15,10 @@ import time
 import json
 import argparse
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import numpy as np
-from sklearn.metrics import classification_report, confusion_matrix, precision_recall_fscore_support, accuracy_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -37,9 +38,10 @@ SEED_FILE = DATA_DIR / "seed_prompts.json"
 
 
 def load_test_records() -> List[Dict[str, Any]]:
-    if TEST_FILE.exists():
-        return load_jsonl_dataset(TEST_FILE)
-    return load_seed_dataset(SEED_FILE)
+    records = load_jsonl_dataset(TEST_FILE) if TEST_FILE.exists() else load_seed_dataset(SEED_FILE)
+    if not records:
+        raise RuntimeError(f"No evaluation records found in {TEST_FILE} or {SEED_FILE}.")
+    return records
 
 
 def print_confusion_matrix(y_true: List[str], y_pred: List[str], classes: List[str], title: str):
@@ -97,27 +99,22 @@ def _compute_metrics(y_true: List[str], y_pred: List[str]) -> Dict[str, Any]:
     }
 
 
-def evaluate_backend(
-    backend_name: str,
+def evaluate_ollama_model(
     records: List[Dict[str, Any]],
     ollama_model: Optional[str] = None,
-    ollama_mode: Optional[str] = None,
     label_override: Optional[str] = None,
 ) -> Dict[str, Any]:
-    display_name = label_override or backend_name
+    target_model = ollama_model or settings.OLLAMA_MODEL
+    display_name = label_override or target_model
     print("\n" + "#" * 65)
-    print(f"EVALUATING BACKEND: {display_name.upper()}")
+    print(f"EVALUATING OLLAMA MODEL: {display_name}")
     print("#" * 65)
 
-    engine = RouterEngine(
-        backend_override=backend_name,
-        ollama_model_override=ollama_model,
-        ollama_mode_override=ollama_mode,
-    )
+    engine = RouterEngine(ollama_model_override=target_model)
     if not engine.router.is_ready():
         raise RuntimeError(
-            f"Backend '{display_name}' is not ready. "
-            f"(For ollama, verify `ollama serve` is running and model '{ollama_model or settings.OLLAMA_MODEL}' is created.)"
+            f"Ollama model '{target_model}' is not ready. "
+            "Verify `ollama serve` is running and the model has been created."
         )
 
     # Warm-up 1 inference (excluded from warm latency stats)
@@ -165,7 +162,7 @@ def evaluate_backend(
         )
 
     print("\n" + "=" * 60)
-    print(f"PERFORMANCE SUMMARY: {display_name.upper()}")
+    print(f"PERFORMANCE SUMMARY: {display_name}")
     print("=" * 60)
     print(f"Guarded Accuracy      : {guarded_metrics['accuracy'] * 100:.2f}%  (Raw: {raw_metrics['accuracy'] * 100:.2f}%)")
     print(f"Guarded Macro F1      : {guarded_metrics['macro_f1']:.4f}   (Raw: {raw_metrics['macro_f1']:.4f})")
@@ -178,8 +175,8 @@ def evaluate_backend(
     print("\nGuarded Per-Class Classification Report:")
     print(classification_report(y_true, y_guarded, labels=CLASSES, zero_division=0))
 
-    print_confusion_matrix(y_true, y_guarded, CLASSES, f"3x3 CONFUSION MATRIX ({display_name.upper()} - GUARDED)")
-    print_latency_stats(latencies, display_name.upper())
+    print_confusion_matrix(y_true, y_guarded, CLASSES, f"3x3 CONFUSION MATRIX ({display_name} - GUARDED)")
+    print_latency_stats(latencies, display_name)
 
     print("=" * 70)
     print(f"MISCLASSIFIED EXAMPLES ({len(errors)} errors / {len(records)} total)")
@@ -194,7 +191,7 @@ def evaluate_backend(
         print(f"... ({len(errors) - 20} additional errors omitted from console; see JSON report)")
 
     return {
-        "backend": display_name,
+        "model": target_model,
         "sample_count": len(records),
         "multi_turn_count": len(mt_indices),
         "multi_turn_accuracy": mt_acc,
@@ -214,65 +211,45 @@ def evaluate_backend(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate Intent Router classifiers on test.jsonl.")
-    parser.add_argument(
-        "--backend",
-        choices=["setfit", "baseline", "ollama", "all"],
-        default="all",
-        help="Model(s) to evaluate"
-    )
+    parser = argparse.ArgumentParser(description="Evaluate the fine-tuned Ollama Qwen2.5-0.5B Intent Router on test.jsonl.")
     parser.add_argument("--ollama-model", type=str, default=None, help="Ollama model name override (default from .env/config)")
-    parser.add_argument("--ollama-mode", choices=["single_token", "json_schema"], default=None, help="Ollama inference mode override")
-    parser.add_argument("--compare-untuned-ollama", type=str, default=None, help="Optional extra untuned Ollama model to benchmark alongside (e.g. qwen2.5:0.5b)")
+    parser.add_argument("--compare-untuned-ollama", type=str, default=None, help="Optional extra Ollama model to compare alongside (e.g. qwen2.5:0.5b)")
     parser.add_argument(
         "--output-report",
         type=str,
         default=str(BASE_DIR / "models" / "evaluation_report.json"),
-        help="Path to save structured evaluation results JSON"
+        help="Path to save structured evaluation results JSON",
     )
     args = parser.parse_args()
 
     records = load_test_records()
     print(f"[INFO] Loaded {len(records)} test samples from {TEST_FILE if TEST_FILE.exists() else SEED_FILE}.")
 
-    results: Dict[str, Any] = {}
-    targets = ["baseline", "setfit", "ollama"] if args.backend == "all" else [args.backend]
-
-    for b in targets:
-        try:
-            key = b
-            results[key] = evaluate_backend(
-                backend_name=b,
-                records=records,
-                ollama_model=args.ollama_model if b == "ollama" else None,
-                ollama_mode=args.ollama_mode if b == "ollama" else None,
-            )
-        except Exception as e:
-            print(f"[WARN] Skipping backend '{b}': {e}")
+    results: Dict[str, Any] = {
+        "ollama": evaluate_ollama_model(records=records, ollama_model=args.ollama_model)
+    }
 
     if args.compare_untuned_ollama:
         try:
-            key = f"ollama_untuned_{args.compare_untuned_ollama}"
-            results[key] = evaluate_backend(
-                backend_name="ollama",
+            key = f"ollama_compare_{args.compare_untuned_ollama}"
+            results[key] = evaluate_ollama_model(
                 records=records,
                 ollama_model=args.compare_untuned_ollama,
-                ollama_mode="single_token",
                 label_override=key,
             )
         except Exception as e:
-            print(f"[WARN] Skipping untuned comparison '{args.compare_untuned_ollama}': {e}")
+            print(f"[WARN] Skipping comparison model '{args.compare_untuned_ollama}': {e}")
 
     if len(results) >= 2:
         print("\n" + "=" * 92)
-        print("COMPARATIVE BENCHMARK SUMMARY (GUARDED WITH WRITE_THRESHOLD=0.40, CONFIDENCE=0.60)")
+        print("COMPARATIVE SUMMARY (GUARDED WITH WRITE_THRESHOLD=0.40, CONFIDENCE=0.60)")
         print("=" * 92)
-        print(f"{'Backend':<28} {'Acc':<9} {'MacroF1':<9} {'WRITE_Rec':<11} {'MT_Acc':<9} {'Mean_ms':<10} {'P95_ms':<10} {'Errs'}")
+        print(f"{'Model':<34} {'Acc':<9} {'MacroF1':<9} {'WRITE_Rec':<11} {'MT_Acc':<9} {'Mean_ms':<10} {'P95_ms':<10} {'Errs'}")
         print("-" * 92)
         for name, m in results.items():
             mt_str = f"{m['multi_turn_accuracy']*100:.1f}%" if m.get("multi_turn_accuracy") is not None else "n/a"
             print(
-                f"{name:<28} "
+                f"{name:<34} "
                 f"{m['accuracy']*100:>5.1f}%   "
                 f"{m['macro_f1']:<9.4f} "
                 f"{m['db_write_recall']*100:>6.1f}%    "

@@ -5,6 +5,7 @@ FastAPI service exposing production endpoints for 3-class Intent Router:
 """
 
 from contextlib import asynccontextmanager
+from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,7 +14,7 @@ from app.schemas import RouteRequest, RouteResponse, HealthResponse, VALID_ROUTE
 from app.router_engine import RouterEngine
 
 # Global router engine instance
-engine: RouterEngine = None  # type: ignore
+engine: Optional[RouterEngine] = None
 
 
 @asynccontextmanager

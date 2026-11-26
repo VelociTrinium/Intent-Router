@@ -50,6 +50,7 @@ def main():
     # Dataset options
     parser.add_argument("--custom-file", type=Path, action="append", default=None, help="Explicit custom JSON/JSONL file(s) (defaults to all data/custom/*.json*)")
     parser.add_argument("--custom-only", action="store_true", help="Train strictly on data/custom/ without synthetic data")
+    parser.add_argument("--include-seeds", action="store_true", help="Include data/seed_prompts.json when data/raw/synthetic_prompts.json is absent")
     parser.add_argument("--regenerate-synthetic", action="store_true", help="Re-run Gemini synthetic data generation before merging")
     parser.add_argument("--target-total", type=int, default=810, help="Target synthetic dataset size when --regenerate-synthetic is set")
     parser.add_argument("--custom-train-repeat", type=int, default=1, help="Upsample factor for custom rows inside train.jsonl")
@@ -84,6 +85,8 @@ def main():
             build_cmd.extend(["--custom-file", str(cf)])
     if args.custom_only:
         build_cmd.append("--custom-only")
+    if args.include_seeds:
+        build_cmd.append("--include-seeds")
     if args.regenerate_synthetic:
         build_cmd.extend(["--regenerate-synthetic", "--target-total", str(args.target_total)])
     if args.dry_run:
@@ -120,9 +123,7 @@ def main():
         report_path = BASE_DIR / "models" / "evaluation_report.json"
         eval_cmd = [
             py, "-u", str(SCRIPTS_DIR / "evaluate.py"),
-            "--backend", "ollama",
             "--ollama-model", ollama_ref,
-            "--ollama-mode", "single_token",
             "--output-report", str(report_path),
         ]
         _run_step(f"Step 4/4: Evaluate '{ollama_ref}' on test.jsonl", eval_cmd, dry_run=args.dry_run)

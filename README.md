@@ -2,7 +2,7 @@
 
 A low-latency, 3-class NLP intent router designed to classify incoming user prompts (single-turn or multi-turn with `chat_history`) into downstream execution pipelines: **`GENERAL_CHAT`**, **`DB_READ`**, or **`DB_WRITE`**.
 
-The primary deployment artifact is a **fine-tuned `Qwen2.5-0.5B-Instruct` (`Q8_0` GGUF, ~531 MB) model running natively in Ollama as `intent-router`**, outputting a single token (`CHAT`, `READ`, or `WRITE`) with exact `logprobs`-calibrated guardrails. A FastAPI microservice (`app/main.py`) and zero-dependency standalone Python client (`app/ollama_client.py`) are both included, alongside SetFit and TF-IDF benchmark backends.
+The deployment artifact is a **fine-tuned `Qwen2.5-0.5B-Instruct` (`Q8_0` GGUF, ~531 MB) model running natively in Ollama**, outputting a single token (`CHAT`, `READ`, or `WRITE`) with exact `logprobs`-calibrated guardrails. A zero-dependency standalone Python client (`app/ollama_client.py`) and a FastAPI microservice (`app/main.py`) are both included.
 
 ---
 
@@ -16,41 +16,35 @@ intent-router/
 ├── pyproject.toml
 ├── requirements.txt
 ├── README.md
+├── PIPELINE.md
 ├── data/
 │   ├── custom/                   # Your curated JSON/JSONL working examples (working_examples.json)
 │   ├── seed_prompts.json         # Hand-written single-turn seed examples per class
-│   ├── raw/                      # Gemini-generated synthetic prompts & verified reviews
-│   ├── review_queue/             # Borderline prompts flagged for human review
-│   └── processed/                # Deduplicated stratified train.jsonl, val.jsonl, test.jsonl
+│   ├── raw/                      # Gemini-generated synthetic prompts (gitignored)
+│   └── processed/                # Deduplicated stratified train.jsonl, val.jsonl, test.jsonl (gitignored)
 ├── models/
-│   ├── hf_base/                  # Downloaded base HuggingFace weights (gitignored)
+│   ├── hf_base/                  # Downloaded base Qwen2.5-0.5B-Instruct weights (gitignored)
 │   ├── ollama_lora/              # Best LoRA adapter checkpoint (gitignored)
 │   ├── ollama_merged/            # Merged FP32 HuggingFace weights (gitignored)
 │   ├── ollama_gguf/              # Exported Q8_0 GGUF + Ollama Modelfile (gitignored)
-│   ├── intent_router/            # SetFit benchmark artifacts
-│   ├── baseline_tfidf/           # TF-IDF + LogisticRegression benchmark artifact
-│   └── evaluation_report.json    # Side-by-side test metrics, confusion matrices, latency
+│   └── evaluation_report.json    # Held-out test metrics, confusion matrix, latency (gitignored)
 ├── scripts/
 │   ├── build_dataset.py          # Validates data/custom/ + merges/splits train/val/test JSONL
-│   ├── retrain_pipeline.py       # End-to-end orchestrator: custom data -> fresh model -> Ollama -> eval
 │   ├── generate_data.py          # Gemini structured output generator (single + multi-turn)
-│   ├── review_uncertain.py       # Interactive HITL CLI for reviewing borderline prompts
-│   ├── train.py                  # Unified trainer (--backend ollama | setfit | baseline)
 │   ├── train_ollama.py           # CPU/GPU LoRA trainer for Qwen2.5-0.5B-Instruct (1-token)
 │   ├── export_ollama_gguf.py     # Converts merged weights to Q8_0 GGUF & creates Ollama model
-│   ├── push_to_hf.py             # Uploads exported GGUF, Modelfile, and metrics to Hugging Face Hub
-│   ├── train_setfit.py           # SetFit contrastive benchmark trainer
-│   ├── train_baseline.py         # TF-IDF + LogisticRegression benchmark trainer
-│   └── evaluate.py               # Benchmarks accuracy, Macro F1, DB_WRITE recall, latency
+│   ├── evaluate.py               # Benchmarks accuracy, Macro F1, DB_WRITE recall, latency
+│   ├── retrain_pipeline.py       # End-to-end orchestrator: custom data -> fresh model -> Ollama -> eval
+│   └── push_to_hf.py             # Uploads exported GGUF, Modelfile, and metrics to Hugging Face Hub
 ├── app/
 │   ├── intent_spec.py            # Canonical system prompt, token map, logprobs extractor, loaders
 │   ├── config.py                 # Thresholds (CONFIDENCE_THRESHOLD=0.60, WRITE_THRESHOLD=0.40)
 │   ├── schemas.py                # Pydantic request/response schemas (prompt + optional chat_history)
-│   ├── router_engine.py          # Unified engine (OllamaRouter, SetFitRouter, BaselineRouter)
+│   ├── router_engine.py          # OllamaRouter + guardrail RouterEngine
 │   ├── ollama_client.py          # Zero-dependency standalone client for external Python projects
 │   └── main.py                   # FastAPI service exposing POST /route and GET /health
 └── tests/
-    ├── test_routing_rules.py     # Unit tests for guardrails, chat_history, and logprobs extraction
+    ├── test_routing_rules.py     # Unit tests for guardrails, chat_history, logprobs, and pipeline helpers
     └── test_api.py               # FastAPI TestClient & standalone client tests
 ```
 
@@ -81,30 +75,28 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Set `GEMINI_API_KEY` in `.env` for synthetic dataset generation. Default runtime settings:
+Set `GEMINI_API_KEY` in `.env` for synthetic dataset generation (and `HF_TOKEN` if pushing to Hugging Face). Default runtime settings:
 ```ini
-ROUTER_BACKEND=ollama
 CONFIDENCE_THRESHOLD=0.60
 WRITE_THRESHOLD=0.40
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=intent-router-qwen2.5-0.5b-instruct:v1
-OLLAMA_MODE=single_token
 ```
 
 ---
 
 ## End-to-End Training & Ollama Export Pipeline
 
-### 1. Generate Single-Turn & Multi-Turn Dataset
+### 1. Generate Synthetic Dataset (Optional) & Build Splits
 ```bash
-python scripts/generate_data.py --target-total 810 --strict-api
-python scripts/review_uncertain.py
+python scripts/generate_data.py --target-total 810
+python scripts/build_dataset.py
 ```
 Outputs stratified splits (`75%` train, `10%` val, `15%` test) with optional `chat_history` in `data/processed/`.
 
 ### 2. Fine-Tune `Qwen2.5-0.5B-Instruct` with LoRA
 ```bash
-python scripts/train.py --backend ollama --epochs 2 --batch-size 8 --grad-accum 2 --lr 3e-4
+python scripts/train_ollama.py --epochs 2 --batch-size 8 --grad-accum 2 --lr 3e-4
 ```
 Saves the best LoRA checkpoint to `models/ollama_lora/` and merges weights to `models/ollama_merged/`.
 
@@ -117,40 +109,23 @@ python scripts/push_to_hf.py --repo-id <your-hf-username>/intent-router-qwen2.5-
 ```
 Produces `models/ollama_gguf/intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf` and `models/ollama_gguf/Modelfile` with baked-in system prompt, ChatML template, `temperature 0`, and `num_predict 1`, then runs `ollama create intent-router-qwen2.5-0.5b-instruct:v1`.
 
-### 4. Adding Custom Working Data & Retraining From a Fresh Base Model
-
-Drop your own classified prompts into [`data/custom/working_examples.json`](data/custom/working_examples.json) and run the full pipeline (data validation/merge -> fresh base model LoRA training -> `Q8_0` GGUF export -> Ollama registration -> quality-gate evaluation):
+### 4. One-Command Retrain & Release Pipeline
+Drop your own classified prompts into [`data/custom/working_examples.json`](data/custom/working_examples.json) and run the full pipeline (data validation/merge -> fresh `Qwen2.5-0.5B-Instruct` LoRA training -> `Q8_0` GGUF export -> Ollama registration -> quality-gate evaluation):
 
 ```bash
 # Preview split & validate custom JSON
 python scripts/retrain_pipeline.py --dry-run
 
 # Retrain fresh base model and publish versioned tag to Ollama
-python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-0.5B-Instruct --model-name intent-router-qwen2.5-0.5b-instruct --version v1
+python scripts/retrain_pipeline.py --model-name intent-router-qwen2.5-0.5b-instruct --version v1
 ```
 
-See **[PIPELINE.md](PIPELINE.md)** and **[data/custom/README.md](data/custom/README.md)** for full JSON schemas, `--custom-only`, `--custom-train-repeat`, candidate tags, and swapping base models.
+See **[PIPELINE.md](PIPELINE.md)** and **[data/custom/README.md](data/custom/README.md)** for full JSON schemas, `--custom-only`, `--custom-train-repeat`, and versioned tags.
 
-### 5. Train Benchmark Models & Evaluate All Backends
+### 5. Evaluate Against Held-Out Test Split
 ```bash
-python scripts/train.py --backend baseline
-python scripts/train.py --backend setfit --num-iterations 2 --epochs 1
-python scripts/evaluate.py --backend all --compare-untuned-ollama qwen2.5:0.5b
+python scripts/evaluate.py --ollama-model intent-router-qwen2.5-0.5b-instruct:v1 --compare-untuned-ollama qwen2.5:0.5b
 ```
-
----
-
-## Benchmark Results (126 Held-Out Test Prompts, CPU-Only Windows)
-
-Measured on `data/processed/test.jsonl` (`42` samples per class, including `33` multi-turn `chat_history` follow-ups) with `WRITE_THRESHOLD=0.40` and `CONFIDENCE_THRESHOLD=0.60`:
-
-| Backend | Guarded Acc | Macro F1 | `DB_WRITE` Recall | Multi-Turn Acc | Mean Latency (CPU) | P95 Latency | Errors |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| **`intent-router` (`Qwen2.5-0.5B` LoRA `Q8_0` in Ollama)** | **98.4%** | **0.9841** | **100.0%** | **97.0%** | **523.28 ms** | **698.12 ms** | **2 / 126** |
-| SetFit (`BAAI/bge-small-en-v1.5`) | 89.7% | 0.8962 | 95.2% | 69.7% | 16.12 ms | 24.76 ms | 13 / 126 |
-| TF-IDF + LogisticRegression | 75.4% | 0.7299 | 90.5% | 63.6% | 0.52 ms | 0.90 ms | 31 / 126 |
-| Untuned `qwen2.5:3b` (zero-shot) | 70.6% | 0.6566 | 97.6% | 66.7% | 1120.30 ms | 2019.21 ms | 37 / 126 |
-| Untuned `qwen2.5:0.5b` (zero-shot) | 38.1% | 0.2988 | 90.5% | 51.5% | 598.42 ms | 858.94 ms | 78 / 126 |
 
 ---
 
@@ -176,7 +151,7 @@ result = classify_intent(
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-- `GET /health`: returns active backend (`ollama`), readiness (`model_loaded`), and threshold configuration.
+- `GET /health`: returns readiness (`model_loaded`) and threshold configuration.
 - `POST /route`: accepts `{"prompt": "...", "chat_history": [...]}` and returns `route`, `raw_prediction`, `confidence`, `probabilities`, `fallback_triggered`, `backend`, and `latency_ms`.
 
 ---

@@ -10,7 +10,6 @@ from typing import List, Optional, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
 RouteName = Literal["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
-IntentType = RouteName  # Backward-compatibility alias
 
 VALID_ROUTES: List[RouteName] = ["GENERAL_CHAT", "DB_READ", "DB_WRITE"]
 
@@ -44,7 +43,7 @@ class RouteResponse(BaseModel):
         default=False,
         description="True if confidence fallback or safety guardrail overrode the raw prediction"
     )
-    backend: Optional[str] = Field(default=None, description="Classifier backend used (setfit, baseline, or ollama)")
+    backend: Optional[str] = Field(default=None, description="Classifier backend used (ollama)")
     latency_ms: Optional[float] = Field(default=None, description="Inference latency in milliseconds")
 
 

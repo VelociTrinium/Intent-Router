@@ -16,13 +16,12 @@ import pytest
 from app.intent_spec import (
     build_ollama_messages,
     extract_ollama_token_probabilities,
-    format_text_with_history,
 )
-from app.router_engine import RouterEngine, BaseRouter, OllamaRouter
+from app.router_engine import OllamaRouter, RouterEngine
 from app.schemas import RouteResponse
 
 
-class MockRouter(BaseRouter):
+class MockRouter:
     """Deterministic mock router for testing routing guardrail logic."""
     def __init__(self, probabilities: Dict[str, float]):
         self._probabilities = probabilities
@@ -43,13 +42,12 @@ class MockRouter(BaseRouter):
 
 @pytest.fixture
 def test_engine():
-    engine = RouterEngine(backend_override="baseline")
     mock_router = MockRouter({
         "GENERAL_CHAT": 0.34,
         "DB_READ": 0.33,
         "DB_WRITE": 0.33
     })
-    engine.router = mock_router
+    engine = RouterEngine(router=mock_router)
     return engine, mock_router
 
 
@@ -120,20 +118,6 @@ def test_chat_history_optional_input(test_engine):
     assert result.confidence == 0.80
 
 
-def test_format_text_with_history():
-    assert format_text_with_history("Show all deals") == "Show all deals"
-    formatted = format_text_with_history(
-        "And in Singapore?",
-        chat_history=[
-            {"role": "user", "content": "List properties in Mumbai"},
-            {"role": "assistant", "content": "Found 12 properties in Mumbai."},
-        ],
-    )
-    assert "User: List properties in Mumbai" in formatted
-    assert "Assistant: Found 12 properties in Mumbai." in formatted
-    assert formatted.endswith("User: And in Singapore?")
-
-
 def test_build_ollama_messages():
     msgs = build_ollama_messages(
         prompt="Yes, delete it",
@@ -169,7 +153,7 @@ def test_extract_ollama_token_probabilities_write_trigger():
     assert abs(probs["DB_WRITE"] - 0.45) < 0.01
     assert abs(probs["GENERAL_CHAT"] - 0.03) < 0.01
 
-    engine = RouterEngine(backend_override="ollama", ollama_model_override="intent-router")
+    engine = RouterEngine(ollama_model_override="intent-router")
 
     class FakeResp:
         def raise_for_status(self):
@@ -223,19 +207,35 @@ def test_build_dataset_custom_priority_and_formats(tmp_path):
     assert not any(r["text"] == "What is our biggest deal in Miami?" for r in train_s)
 
 
-def test_export_template_detection(tmp_path):
-    import json
-    from scripts.export_ollama_gguf import detect_template_family
+def test_write_modelfile_chatml(tmp_path):
+    from scripts.export_ollama_gguf import write_modelfile
 
-    d1 = tmp_path / "llama"
-    d1.mkdir()
-    (d1 / "tokenizer_config.json").write_text('{"eos_token": "<|eot_id|>"}', encoding="utf-8")
-    assert detect_template_family(d1) == "llama3"
+    modelfile_path = tmp_path / "Modelfile"
+    write_modelfile(modelfile_path, "intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf")
+    content = modelfile_path.read_text(encoding="utf-8")
+    assert "FROM ./intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf" in content
+    assert "<|im_start|>" in content
+    assert "PARAMETER num_predict 1" in content
 
-    d2 = tmp_path / "qwen"
-    d2.mkdir()
-    (d2 / "training_metadata.json").write_text(json.dumps({"chat_family": "chatml"}), encoding="utf-8")
-    assert detect_template_family(d2) == "chatml"
+
+def test_ollama_router_raises_on_unparseable_response():
+    engine = RouterEngine(ollama_model_override="intent-router")
+
+    class FakeResp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"role": "assistant", "content": "INVALID"}, "logprobs": []}
+
+    class FakeClient:
+        def post(self, *args, **kwargs):
+            return FakeResp()
+
+    assert isinstance(engine.router, OllamaRouter)
+    engine.router._client = FakeClient()
+    with pytest.raises(RuntimeError, match="Could not parse"):
+        engine.route("Delete row 42")
 
 
 def test_resolve_ollama_ref_and_windows_safe_stem():

@@ -32,7 +32,6 @@ from app.intent_spec import CLASSES, TOKEN_TO_ROUTE, normalize_chat_history
 DATA_DIR = BASE_DIR / "data"
 CUSTOM_DIR = DATA_DIR / "custom"
 RAW_FILE = DATA_DIR / "raw" / "synthetic_prompts.json"
-VERIFIED_REVIEWS_FILE = DATA_DIR / "raw" / "verified_reviews.json"
 SEED_FILE = DATA_DIR / "seed_prompts.json"
 PROCESSED_DIR = DATA_DIR / "processed"
 
@@ -142,7 +141,7 @@ def load_custom_directory(custom_dir: Path, explicit_files: Optional[List[Path]]
 
 
 def load_base_pool(include_seeds: bool = False) -> List[Dict[str, Any]]:
-    """Loads existing raw synthetic pool + verified reviews (and seed_prompts.json only if include_seeds=True)."""
+    """Loads existing raw synthetic pool (and seed_prompts.json only if include_seeds=True)."""
     out: List[Dict[str, Any]] = []
     if RAW_FILE.exists():
         with open(RAW_FILE, "r", encoding="utf-8") as f:
@@ -155,15 +154,6 @@ def load_base_pool(include_seeds: bool = False) -> List[Dict[str, Any]]:
         loaded = load_custom_file(SEED_FILE)
         for rec in loaded:
             rec["_is_custom"] = False
-            out.append(rec)
-
-    if VERIFIED_REVIEWS_FILE.exists():
-        with open(VERIFIED_REVIEWS_FILE, "r", encoding="utf-8") as f:
-            rev_items = json.load(f)
-        for idx, item in enumerate(rev_items):
-            rec = _normalize_record(item, f"{VERIFIED_REVIEWS_FILE.name}[{idx}]")
-            rec["_is_custom"] = False
-            rec["split"] = "train"
             out.append(rec)
 
     return out
@@ -291,7 +281,6 @@ def main():
             str(SCRIPTS_DIR / "generate_data.py"),
             "--target-total",
             str(args.target_total),
-            "--strict-api",
         ]
         print(f"[INFO] Regenerating synthetic data: {' '.join(gen_cmd)}")
         subprocess.run(gen_cmd, check=True)

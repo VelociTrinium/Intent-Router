@@ -139,19 +139,6 @@ class DynamicPaddingCollator:
         }
 
 
-def detect_chat_family(tokenizer: Any) -> str:
-    vocab = tokenizer.get_vocab() if hasattr(tokenizer, "get_vocab") else {}
-    eos = getattr(tokenizer, "eos_token", "") or ""
-    tmpl = getattr(tokenizer, "chat_template", "") or ""
-    if "<|im_end|>" in vocab or "<|im_end|>" in eos or "<|im_end|>" in tmpl:
-        return "chatml"
-    if "<|eot_id|>" in vocab or "<|eot_id|>" in eos or "<|eot_id|>" in tmpl:
-        return "llama3"
-    if "<end_of_turn>" in vocab or "<end_of_turn>" in eos or "<end_of_turn>" in tmpl:
-        return "gemma"
-    return "chatml"
-
-
 def resolve_class_token_ids(tokenizer: Any) -> Dict[str, int]:
     mapping: Dict[str, int] = {}
     for route in CLASSES:
@@ -243,6 +230,8 @@ def main():
     train_file = PROCESSED_DIR / "train.jsonl"
     val_file = PROCESSED_DIR / "val.jsonl"
     train_rows = load_jsonl_dataset(train_file) if train_file.exists() else load_seed_dataset(SEED_FILE)
+    if not train_rows:
+        raise RuntimeError(f"No training samples found in {train_file} or {SEED_FILE}. Run `python scripts/build_dataset.py` first.")
     val_rows = load_jsonl_dataset(val_file) if val_file.exists() else []
     print(f"[INFO] Loaded {len(train_rows)} train samples, {len(val_rows)} val samples.")
 
@@ -252,9 +241,8 @@ def main():
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    chat_family = detect_chat_family(tokenizer)
     class_token_ids = resolve_class_token_ids(tokenizer)
-    print(f"[INFO] Detected chat_family='{chat_family}' | single-token class IDs: {class_token_ids}")
+    print(f"[INFO] ChatML template | single-token class IDs: {class_token_ids}")
 
     # Wipe stale adapter/merged directories so fresh base training never mixes checkpoints
     run_ckpt_dir = BASE_DIR / "checkpoints" / "ollama_lora_runs"
@@ -294,8 +282,6 @@ def main():
 
     best_score = -1.0
     best_metrics: Dict[str, float] = {}
-    args.lora_dir.mkdir(parents=True, exist_ok=True)
-    args.merged_dir.mkdir(parents=True, exist_ok=True)
 
     class ValEvalCallback(TrainerCallback):
         def on_epoch_end(self, cb_args, state, control, **kwargs):
@@ -378,7 +364,7 @@ def main():
 
     meta = {
         "base_model": args.model_id,
-        "chat_family": chat_family,
+        "chat_family": "chatml",
         "train_samples": len(train_rows),
         "val_samples": len(val_rows),
         "epochs": args.epochs,
@@ -390,6 +376,8 @@ def main():
     }
     with open(args.merged_dir / "training_metadata.json", "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
+    if run_ckpt_dir.exists():
+        shutil.rmtree(run_ckpt_dir, ignore_errors=True)
     print(f"[OK] Saved merged HuggingFace model & metadata to {args.merged_dir}")
 
 

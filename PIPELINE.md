@@ -17,7 +17,7 @@ Fresh Base HF Model ──▶ scripts/train_ollama.py (LoRA, target-token masked
                         scripts/export_ollama_gguf.py (Q8_0 GGUF + Modelfile) ──▶ ollama create <name>
                                     │
                                     ▼
-                        scripts/evaluate.py --backend ollama ──▶ models/evaluation_report.json
+                        scripts/evaluate.py --ollama-model <name> ──▶ models/evaluation_report.json
 ```
 
 Everything is orchestrated by one command: [`scripts/retrain_pipeline.py`](scripts/retrain_pipeline.py).
@@ -59,7 +59,6 @@ Add your labeled prompts to [`data/custom/working_examples.json`](data/custom/wo
 - **Strict validation**: Rejects missing text, invalid labels, or malformed `chat_history` before training starts.
 - **Custom label always wins**: If an example in `data/custom/` matches a prompt in `data/raw/synthetic_prompts.json`, your custom label overrides the synthetic one.
 - **Pinned evaluation safety**: Adding `"split": "test"` (or `"val"` / `"train"`) locks golden test cases into `test.jsonl` so they never leak into training.
-- **Preserved human reviews**: Verified items from `scripts/review_uncertain.py` are stored in `data/raw/verified_reviews.json` and automatically kept in `train.jsonl`.
 - **Optional weighting (`--custom-train-repeat`)**: If you have e.g. 50 real production examples alongside ~800 synthetic examples, `--custom-train-repeat 2` or `3` repeats your real examples inside `train.jsonl` only (never in `val.jsonl` or `test.jsonl`).
 
 ---
@@ -129,16 +128,10 @@ Once you accumulate enough curated real examples (e.g., 300+ balanced across all
 python scripts/retrain_pipeline.py --custom-only --version v2
 ```
 
-### E. Swap to a Different Fresh Base Model
-Any causal instruct model whose tokenizer encodes `CHAT`, `READ`, and `WRITE` as single tokens works cleanly (`Qwen/Qwen2.5-0.5B-Instruct`, `Qwen/Qwen2.5-1.5B-Instruct`, `Qwen/Qwen3-0.6B`, `HuggingFaceTB/SmolLM2-360M-Instruct`, etc.). `scripts/train_ollama.py` and `scripts/export_ollama_gguf.py` auto-detect the chat template (`chatml`, `llama3`, or `gemma`) and preserve the exact same `CHAT`/`READ`/`WRITE` output contract:
-```bash
-python scripts/retrain_pipeline.py --base-model Qwen/Qwen2.5-1.5B-Instruct --model-name intent-router-1.5b
-```
-
-### F. Regenerate Synthetic Data With Expanded Seeds Before Merging
+### E. Regenerate Synthetic Data With Expanded Seeds Before Merging
 If you also add new seed prompts to `data/seed_prompts.json`:
 ```bash
-python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 900 --model-name intent-router
+python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 900 --version v2
 ```
 
 ---
@@ -162,6 +155,6 @@ This uploads all `.gguf` files in `models/ollama_gguf/`, the `Modelfile`, `READM
 ## 5. Contract Preserved Across Every Retrain
 
 No matter which base model or dataset mix you train with, the pipeline enforces the exact same runtime interface for [`app/ollama_client.py`](app/ollama_client.py) and your separate project:
-1. `Modelfile` bakes in `OLLAMA_CLASSIFIER_SYSTEM_PROMPT`, `temperature 0`, `num_predict 1`, and architecture-matched stop tokens.
+1. `Modelfile` bakes in `OLLAMA_CLASSIFIER_SYSTEM_PROMPT`, `ChatML` template, `temperature 0`, `num_predict 1`, and Qwen stop tokens.
 2. The model emits 1 token: `CHAT` (`GENERAL_CHAT`), `READ` (`DB_READ`), or `WRITE` (`DB_WRITE`).
 3. `logprobs` on that token give calibrated probabilities for `WRITE_THRESHOLD=0.40` and `CONFIDENCE_THRESHOLD=0.60`.

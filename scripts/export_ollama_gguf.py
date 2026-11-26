@@ -1,19 +1,17 @@
 """
-Exports a merged HuggingFace intent classifier (`models/ollama_merged/`)
-to standalone GGUF (default Q8_0 via official llama.cpp `convert_hf_to_gguf.py`),
-auto-detects the chat template family (`chatml`, `llama3`, `gemma`), writes a
-tailored Ollama Modelfile preserving the 1-token CHAT/READ/WRITE contract, and
-registers the model in local Ollama.
+Exports the merged HuggingFace Qwen2.5-0.5B-Instruct intent classifier (`models/ollama_merged/`)
+to standalone GGUF (default Q8_0 via llama.cpp `convert_hf_to_gguf.py`), writes an
+Ollama Modelfile with ChatML template preserving the 1-token CHAT/READ/WRITE contract,
+and registers the versioned model in local Ollama.
 """
 
 import re
 import sys
-import json
 import subprocess
 import argparse
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -54,58 +52,7 @@ CHATML_TEMPLATE = '''{{- if .Messages }}
 {{ end }}<|im_start|>assistant
 {{ end }}{{ .Response }}{{ if .Response }}<|im_end|>{{ end }}'''
 
-LLAMA3_TEMPLATE = '''{{- if .System }}<|start_header_id|>system<|end_header_id|>
-
-{{ .System }}<|eot_id|>{{ end }}
-{{- range .Messages }}
-{{- if eq .Role "user" }}<|start_header_id|>user<|end_header_id|>
-
-{{ .Content }}<|eot_id|>{{ else if eq .Role "assistant" }}<|start_header_id|>assistant<|end_header_id|>
-
-{{ .Content }}<|eot_id|>{{ end }}
-{{- end }}<|start_header_id|>assistant<|end_header_id|>
-
-'''
-
-GEMMA_TEMPLATE = '''{{- range $i, $_ := .Messages }}
-{{- $last := eq (len (slice $.Messages $i)) 1 -}}
-{{- if eq .Role "user" }}<start_of_turn>user
-{{ if and $.System (eq $i 0) }}{{ $.System }}
-
-{{ end }}{{ .Content }}<end_of_turn>
-{{ else if eq .Role "assistant" }}<start_of_turn>model
-{{ .Content }}{{ if not $last }}<end_of_turn>
-{{ end }}
-{{- end }}
-{{- if and (ne .Role "assistant") $last }}<start_of_turn>model
-{{ end }}
-{{- end }}'''
-
-TEMPLATE_SPECS: Dict[str, Tuple[str, List[str]]] = {
-    "chatml": (CHATML_TEMPLATE, ["<|im_end|>", "<|endoftext|>"]),
-    "llama3": (LLAMA3_TEMPLATE, ["<|eot_id|>", "<|end_of_text|>"]),
-    "gemma": (GEMMA_TEMPLATE, ["<end_of_turn>", "<eos>"]),
-}
-
-
-def detect_template_family(merged_dir: Path) -> str:
-    meta_file = merged_dir / "training_metadata.json"
-    if meta_file.exists():
-        try:
-            fam = json.loads(meta_file.read_text(encoding="utf-8")).get("chat_family")
-            if fam in TEMPLATE_SPECS:
-                return fam
-        except Exception:
-            pass
-
-    tok_cfg = merged_dir / "tokenizer_config.json"
-    if tok_cfg.exists():
-        raw = tok_cfg.read_text(encoding="utf-8")
-        if "<|eot_id|>" in raw:
-            return "llama3"
-        if "<end_of_turn>" in raw:
-            return "gemma"
-    return "chatml"
+CHATML_STOP_TOKENS = ["<|im_end|>", "<|endoftext|>"]
 
 
 def ensure_converter(converter_path: Path) -> Path:
@@ -144,12 +91,11 @@ def ensure_converter(converter_path: Path) -> Path:
     return converter_path
 
 
-def write_modelfile(modelfile_path: Path, gguf_filename: str, chat_family: str):
-    template, stop_tokens = TEMPLATE_SPECS.get(chat_family, TEMPLATE_SPECS["chatml"])
-    stop_lines = "\n".join(f'PARAMETER stop "{tok}"' for tok in stop_tokens)
+def write_modelfile(modelfile_path: Path, gguf_filename: str):
+    stop_lines = "\n".join(f'PARAMETER stop "{tok}"' for tok in CHATML_STOP_TOKENS)
     content = (
         f"FROM ./{gguf_filename}\n\n"
-        f'TEMPLATE """{template}"""\n\n'
+        f'TEMPLATE """{CHATML_TEMPLATE}"""\n\n'
         f'SYSTEM """{OLLAMA_CLASSIFIER_SYSTEM_PROMPT}"""\n\n'
         "PARAMETER temperature 0\n"
         "PARAMETER top_k 10\n"
@@ -157,7 +103,7 @@ def write_modelfile(modelfile_path: Path, gguf_filename: str, chat_family: str):
         f"{stop_lines}\n"
     )
     modelfile_path.write_text(content, encoding="utf-8")
-    print(f"[OK] Wrote Modelfile ({chat_family}) to {modelfile_path}")
+    print(f"[OK] Wrote Modelfile (chatml) to {modelfile_path}")
 
 
 def resolve_ollama_ref(model_name: str, version: Optional[str] = None) -> Tuple[str, str]:
@@ -177,7 +123,7 @@ def resolve_ollama_ref(model_name: str, version: Optional[str] = None) -> Tuple[
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert merged HF classifier to GGUF and register in Ollama.")
+    parser = argparse.ArgumentParser(description="Convert merged HF Qwen2.5-0.5B classifier to GGUF and register in Ollama.")
     parser.add_argument("--merged-dir", type=Path, default=DEFAULT_MERGED_DIR, help="Path to merged HF model")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR, help="Output directory for GGUF & Modelfile")
     parser.add_argument("--outtype", choices=["q8_0", "f16", "bf16", "f32"], default="q8_0", help="GGUF tensor type (default: q8_0)")
@@ -190,7 +136,7 @@ def main():
     if not args.merged_dir.exists() or not (args.merged_dir / "config.json").exists():
         raise FileNotFoundError(
             f"Merged HuggingFace model not found at {args.merged_dir}. "
-            "Run `python scripts/train.py --backend ollama` first."
+            "Run `python scripts/train_ollama.py` or `python scripts/retrain_pipeline.py` first."
         )
 
     ollama_ref, safe_stem = resolve_ollama_ref(args.model_name, args.version)
@@ -207,9 +153,8 @@ def main():
     size_mb = gguf_path.stat().st_size / (1024 * 1024)
     print(f"[OK] Exported GGUF ({size_mb:.1f} MB): {gguf_path}")
 
-    chat_family = detect_template_family(args.merged_dir)
     modelfile_path = args.out_dir / "Modelfile"
-    write_modelfile(modelfile_path, gguf_filename, chat_family=chat_family)
+    write_modelfile(modelfile_path, gguf_filename)
 
     if args.skip_ollama_create:
         print("[INFO] --skip-ollama-create set. Skipping `ollama create`.")

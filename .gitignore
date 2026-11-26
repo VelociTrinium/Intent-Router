@@ -21,10 +21,6 @@ htmlcov/
 .ruff_cache/
 
 # Model artifacts and weights
-models/baseline_tfidf/*
-!models/baseline_tfidf/.gitkeep
-models/intent_router/*
-!models/intent_router/.gitkeep
 models/hf_base/
 models/ollama_lora/
 models/ollama_merged/
@@ -35,8 +31,6 @@ data/processed/*
 !data/processed/.gitkeep
 data/raw/*
 !data/raw/.gitkeep
-data/review_queue/*
-!data/review_queue/.gitkeep
 
 # IDE & Editor files
 .vscode/
