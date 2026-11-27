@@ -465,3 +465,41 @@ def test_push_to_hf_creates_tag(tmp_path, monkeypatch):
     )
     push_to_hf.main()
     assert ("user/test-gguf", "v1.0.0", "Release v1.0.0", "model", True) in calls["tag"]
+
+
+def test_cleanup_build_artifacts_dry_run_and_execute(tmp_path, monkeypatch):
+    from scripts import cleanup
+
+    fake_repo = tmp_path / "repo"
+    (fake_repo / "checkpoints" / "run1").mkdir(parents=True)
+    (fake_repo / "checkpoints" / "run1" / "model.safetensors").write_bytes(b"123456")
+    (fake_repo / "models" / "ollama_lora").mkdir(parents=True)
+    (fake_repo / "models" / "ollama_lora" / "adapter.bin").write_bytes(b"abcd")
+    (fake_repo / "models" / "ollama_merged").mkdir(parents=True)
+    (fake_repo / "models" / "ollama_merged" / "model.safetensors").write_bytes(b"xyz")
+    (fake_repo / "models" / "ollama_gguf").mkdir(parents=True)
+    (fake_repo / "models" / "ollama_gguf" / "v2.gguf").write_bytes(b"gguf")
+    (fake_repo / "models" / "hf_base" / "Qwen2.5-0.5B-Instruct").mkdir(parents=True)
+    (fake_repo / "models" / "hf_base" / "Qwen2.5-0.5B-Instruct" / "config.json").write_text("{}")
+    (fake_repo / "data" / "processed").mkdir(parents=True)
+    (fake_repo / "data" / "processed" / ".gitkeep").write_text("")
+    (fake_repo / "data" / "processed" / "train.jsonl").write_text("{}\n")
+
+    monkeypatch.setattr(cleanup, "BASE_DIR", fake_repo)
+
+    # Dry-run preserves everything
+    monkeypatch.setattr(sys, "argv", ["cleanup.py", "--dry-run"])
+    cleanup.main()
+    assert (fake_repo / "models" / "ollama_gguf" / "v2.gguf").exists()
+    assert (fake_repo / "models" / "ollama_merged").exists()
+
+    # Execute default cleanup removes build dirs while keeping hf_base and data
+    monkeypatch.setattr(sys, "argv", ["cleanup.py", "--yes"])
+    cleanup.main()
+    assert not (fake_repo / "checkpoints").exists()
+    assert not (fake_repo / "models" / "ollama_lora").exists()
+    assert not (fake_repo / "models" / "ollama_merged").exists()
+    assert not (fake_repo / "models" / "ollama_gguf").exists()
+    assert (fake_repo / "models" / "hf_base" / "Qwen2.5-0.5B-Instruct" / "config.json").exists()
+    assert (fake_repo / "data" / "processed" / "train.jsonl").exists()
+    assert (fake_repo / "data" / "processed" / ".gitkeep").exists()

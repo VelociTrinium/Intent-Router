@@ -20,8 +20,8 @@ intent-router/
 ├── data/
 │   ├── custom/                   # Your curated JSON/JSONL working examples (working_examples.json)
 │   ├── seed_prompts.json         # Hand-written single-turn seed examples per class (649 seeds)
-│   ├── raw/                      # Gemini-generated synthetic prompts (gitignored)
-│   └── processed/                # Deduplicated stratified train.jsonl, val.jsonl, test.jsonl (gitignored)
+│   ├── raw/                      # Gemini-generated synthetic prompts (synthetic_prompts.json)
+│   └── processed/                # Deduplicated stratified train.jsonl, val.jsonl, test.jsonl
 ├── models/
 │   ├── hf_base/                  # Downloaded base Qwen2.5-0.5B-Instruct weights (gitignored)
 │   ├── ollama_lora/              # Best LoRA adapter checkpoint (gitignored)
@@ -35,7 +35,8 @@ intent-router/
 │   ├── export_ollama_gguf.py     # Converts merged weights to Q8_0 GGUF & creates Ollama model
 │   ├── evaluate.py               # Benchmarks accuracy, Macro F1, DB_WRITE/ASK recall, latency
 │   ├── retrain_pipeline.py       # End-to-end orchestrator: custom/seed data -> fresh model -> Ollama -> eval
-│   └── push_to_hf.py             # Uploads exported GGUF, Modelfile, and metrics to Hugging Face Hub
+│   ├── push_to_hf.py             # Uploads exported GGUF, Modelfile, and metrics to Hugging Face Hub
+│   └── cleanup.py                # Standalone cleaner removing checkpoints, LoRA/merged weights, and GGUFs
 ├── app/
 │   ├── intent_spec.py            # Canonical system prompt, token map, logprobs & guardrail helpers
 │   ├── config.py                 # Thresholds (CONFIDENCE=0.60, WRITE=0.40, CLARIFY=0.40, FALLBACK=CLARIFICATION_REQUIRED)
@@ -136,6 +137,13 @@ See **[PIPELINE.md](PIPELINE.md)** and **[data/custom/README.md](data/custom/REA
 ### 5. Evaluate Against Held-Out Test Split
 ```bash
 python scripts/evaluate.py --ollama-model intent-router-qwen2.5-0.5b-instruct:v1 --compare-untuned-ollama qwen2.5:0.5b
+```
+
+### 6. Clean Up Intermediate Build & Epoch Artifacts
+Once registered in Ollama (and optionally pushed to Hugging Face), reclaim ~2.8+ GB of intermediate checkpoints, merged FP32 weights, LoRA adapters, and exported `.gguf` copies while keeping `models/hf_base/`, `data/`, and Ollama blobs intact:
+```bash
+python scripts/cleanup.py --dry-run
+python scripts/cleanup.py --yes
 ```
 
 ---

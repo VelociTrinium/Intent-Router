@@ -148,7 +148,18 @@ python scripts/push_to_hf.py --repo-id <your-hf-username>/intent-router-qwen2.5-
 
 ---
 
-## 5. Contract Preserved Across Every Retrain
+## 5. Cleaning Up Build & Epoch Storage (`scripts/cleanup.py`)
+
+Once Ollama (`ollama create`) holds the model in Ollama's own blob store and any Hugging Face upload has finished, run the standalone zero-dependency cleanup script to delete `checkpoints/`, `models/ollama_lora/`, `models/ollama_merged/`, and `models/ollama_gguf/` (~2.8+ GB per build) while keeping `models/hf_base/`, `models/evaluation_report.json`, and `data/`:
+```bash
+python scripts/cleanup.py --dry-run
+python scripts/cleanup.py --yes
+```
+*(Optional flags: `--include-caches`, `--include-data`, `--include-base`, `--include-reports`.)*
+
+---
+
+## 6. Contract Preserved Across Every Retrain
 
 No matter which dataset mix you train with, the pipeline enforces the exact same runtime interface for [`app/ollama_client.py`](app/ollama_client.py) and your separate project:
 1. `Modelfile` bakes in `OLLAMA_CLASSIFIER_SYSTEM_PROMPT`, `ChatML` template, `temperature 0`, `num_predict 1`, and Qwen stop tokens.
