@@ -26,12 +26,6 @@ models/ollama_lora/
 models/ollama_merged/
 models/ollama_gguf/
 
-# Processed and generated data
-data/processed/*
-!data/processed/.gitkeep
-data/raw/*
-!data/raw/.gitkeep
-
 # IDE & Editor files
 .vscode/
 .idea/
