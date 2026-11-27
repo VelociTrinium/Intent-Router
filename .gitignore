@@ -40,3 +40,4 @@ dist/
 *.egg-info/
 checkpoints/
 scripts/vendor/
+data/review/

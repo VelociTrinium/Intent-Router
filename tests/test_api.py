@@ -229,3 +229,55 @@ def test_standalone_ollama_client(monkeypatch):
     assert res_ask["raw_prediction"] == "CLARIFICATION_REQUIRED"
     assert res_ask["route"] == "CLARIFICATION_REQUIRED"
     assert res_ask["fallback_triggered"] is False
+
+    # 3. Destructive bulk write wrongly emitted as WRITE -> intercepted to CLARIFICATION_REQUIRED
+    mock_payload_bulk_write = {
+        "message": {"role": "assistant", "content": "WRITE"},
+        "logprobs": [
+            {
+                "token": "WRITE",
+                "logprob": math.log(0.97),
+                "top_logprobs": [
+                    {"token": "WRITE", "logprob": math.log(0.97)},
+                    {"token": "CHAT", "logprob": math.log(0.01)},
+                    {"token": "READ", "logprob": math.log(0.01)},
+                    {"token": "ASK", "logprob": math.log(0.01)},
+                ],
+            }
+        ],
+    }
+    monkeypatch.setattr(
+        urllib.request,
+        "urlopen",
+        lambda req, timeout=15.0: FakeHttpResp(json.dumps(mock_payload_bulk_write).encode("utf-8")),
+    )
+    res_bulk = classify_intent("Override every active deal stage status to 'Terminated'", version="v2")
+    assert res_bulk["raw_prediction"] == "DB_WRITE"
+    assert res_bulk["route"] == "CLARIFICATION_REQUIRED"
+    assert res_bulk["fallback_triggered"] is True
+
+
+def test_review_logging_respects_config_flag(tmp_path, monkeypatch):
+    import json
+    from app.config import settings
+
+    log_file = tmp_path / "review.jsonl"
+    monkeypatch.setattr(settings, "REVIEW_LOG_PATH", str(log_file))
+    monkeypatch.setattr(settings, "REVIEW_CONFIDENCE_THRESHOLD", 0.95)
+    monkeypatch.setattr(settings, "ENABLE_REVIEW_LOGGING", False)
+
+    test_engine = RouterEngine(router=MockApiRouter())
+    monkeypatch.setattr(main_module, "engine", test_engine)
+    tc = TestClient(app)
+
+    r1 = tc.post("/route", json={"prompt": "Show all companies in China"})
+    assert r1.status_code == 200
+    assert not log_file.exists()
+
+    monkeypatch.setattr(settings, "ENABLE_REVIEW_LOGGING", True)
+    r2 = tc.post("/route", json={"prompt": "Show all companies in China"})
+    assert r2.status_code == 200
+    assert log_file.exists()
+    logged = json.loads(log_file.read_text(encoding="utf-8").strip())
+    assert logged["prompt"] == "Show all companies in China"
+    assert logged["route"] == "DB_READ"

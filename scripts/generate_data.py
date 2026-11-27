@@ -19,6 +19,7 @@ import os
 import sys
 import json
 import time
+import random
 import argparse
 from pathlib import Path
 from typing import Any, Dict, List, Literal
@@ -47,7 +48,7 @@ SEED_FILE = DATA_DIR / "seed_prompts.json"
 PREFERRED_MODELS = [
     "gemini-3.5-flash-lite",
     "gemini-3.6-flash",
-    "gemini-2.5-flash",
+    "gemini-3.8-flash",
 ]
 
 
@@ -126,10 +127,10 @@ CRITICAL BOUNDARY DISTINCTIONS:
 
 CLASS_SINGLE_THEMES: Dict[str, List[str]] = {
     "GENERAL_CHAT": [
-        "greetings, MiraChat capability/mode questions, and casual broker banter",
+        "greetings, MiraChat capability/live-data meta-questions ('is this connected to live data?'), and casual broker banter",
         "ReConnect platform how-to questions (field meanings, workflows, lead vs pursuit conversions) without DB queries",
-        "commercial real estate domain concepts (cap rate, WALE, Grade A/B, NNN lease, FSI) and office announcements/HR",
-        "SQL syntax questions, sample scripts without execution, and drafting emails/agendas/proposals without CRM saving",
+        "commercial real estate domain concepts (cap rate, WALE, Grade A/B, NNN lease, FSI) and internal office notices/circulate announcements",
+        "SQL syntax questions, sample/example SQL scripts without execution, and drafting emails/agendas/narrative performance summaries without CRM DB actions",
     ],
     "DB_READ": [
         "clear company, contact, and account-manager lookup queries across APAC/EMEA/US",
@@ -142,12 +143,13 @@ CLASS_SINGLE_THEMES: Dict[str, List[str]] = {
         "updating a named contact/pursuit/property field to an explicit new value (phone, email, stage, deal value, broker ID)",
         "logging concrete calls, meetings, notes, site visits, or scheduling dated tasks/follow-ups against named accounts",
         "specific mixed READ+WRITE compound prompts with complete details (e.g. find primary contact and update phone to X / convert lead into pursuit with value Y)",
+        "complete inbound client inquiry emails containing company name, property/advisory requirement, and contact email/phone",
     ],
     "CLARIFICATION_REQUIRED": [
         "underspecified write commands missing target entity or missing new value (e.g. 'Add Sarah', 'Update Kevin's phone number', 'Change pursuit #8436 deal value')",
         "vague, overly broad, or bare-fragment queries ('all data.', 'Show me the numbers', 'Check the database', 'Pursuit #8436', 'Sarah Wong +852 9123 7890')",
         "unresolved pronouns/anaphora with no prior context ('Update it', 'Move it to next week', 'Check that for me', 'Assign those to Sarah')",
-        "destructive, irreversible, or bulk mutations needing confirmation ('Delete Microsoft from CRM', 'Bulk delete inactive accounts', 'Drop leads table', 'Archive old leads', 'Merge duplicates automatically')",
+        "destructive, irreversible, or bulk mutations needing confirmation ('Delete Microsoft from CRM', 'Bulk delete inactive accounts', 'Drop leads table', 'Override every active deal stage to Terminated', 'Reset all pipeline statuses to draft', 'Mass update all grades')",
         "ambiguous read-vs-write prompts or multi-action uncertainty ('HSBC meeting tomorrow 3 PM — check schedule or book new?', 'Update or delete that lead?')",
     ],
 }
@@ -159,7 +161,7 @@ CLASS_MULTI_TURN_SCENARIOS: Dict[str, List[str]] = {
     ],
     "DB_READ": [
         "follow-up filter tweaks or entity carry-over from prior DB_READ turns where history makes the read unambiguous ('What about Singapore?', 'Show their open pursuits instead', 'Break that down by service line')",
-        "user pulls back from a suggested write in history to inspect records first ('Actually just show the 14 leads first, don't archive anything')",
+        "user pulls back from a suggested write/delete/archive in history to inspect those specific records first — vary the wording naturally to match the exact topic in history (do NOT copy a fixed boilerplate phrase)",
     ],
     "DB_WRITE": [
         "assistant previously asked a clarifying question (missing phone/value/target) and the user supplies the concrete details so the write is now complete ('Set it to USD 2,400,000 and stage Negotiation', 'Yes, log a call with Sarah Wong at HSBC for today at 3 PM')",
@@ -167,7 +169,7 @@ CLASS_MULTI_TURN_SCENARIOS: Dict[str, List[str]] = {
     ],
     "CLARIFICATION_REQUIRED": [
         "assistant listed multiple matching companies/contacts/pursuits in history and the user responds ambiguously without saying which one or what value ('Update the deal value', 'Change her phone number', 'Pick that one and mark it won')",
-        "even with prior browsing context, user issues a sudden destructive/bulk deletion or ambiguous read-vs-write command ('Delete all of them now', 'Purge those old records', 'Should we update or remove that contact?')",
+        "even with prior browsing context, user issues a sudden destructive/bulk deletion, mass override, or ambiguous read-vs-write command ('Delete all of them now', 'Purge those old records', 'Should we update or remove that contact?')",
     ],
 }
 
@@ -211,6 +213,11 @@ def _generate_with_models(client: Any, prompt_text: str, schema_cls: Any, temper
     raise RuntimeError(f"All Gemini models failed: {last_err}")
 
 
+def _dedup_key(text: str, chat_history: List[Dict[str, str]] | None = None) -> str:
+    hist_norm = [(t["role"].lower(), t["content"].strip().lower()) for t in (chat_history or [])]
+    return json.dumps({"h": hist_norm, "p": text.strip().lower()}, ensure_ascii=False)
+
+
 def call_gemini_single_turn(
     client: Any,
     intent: str,
@@ -219,22 +226,23 @@ def call_gemini_single_turn(
     sub_theme: str,
     existing_samples: List[str],
 ) -> SingleTurnBatchResponse:
-    ref_seeds = seed_examples[-20:] if len(seed_examples) > 20 else seed_examples
-    avoid_snippet = "\n".join(f"- {s}" for s in existing_samples[-20:]) if existing_samples else "(none yet)"
+    ref_seeds = random.sample(seed_examples, min(20, len(seed_examples)))
+    avoid_pool = existing_samples[-35:] if len(existing_samples) > 35 else existing_samples
+    avoid_snippet = "\n".join(f"- {s}" for s in avoid_pool) if avoid_pool else "(none yet)"
     user_prompt = f"""Target Intent: {intent}
 Focus Variation Theme: {sub_theme}
 
 Seed Examples for reference (sample):
 {chr(10).join(f"- {s}" for s in ref_seeds)}
 
-Do NOT repeat or closely paraphrase these already-generated prompts:
+Do NOT repeat or closely paraphrase these already-existing prompts:
 {avoid_snippet}
 
 Generate {batch_size} unique, highly realistic, diverse user prompts strictly belonging to the '{intent}' class.
 Ensure wide variety in:
 - Writing style from very loose/colloquial/typo-tolerant shorthand (2 to 6 words) to formal multi-clause enterprise requests.
 - Realistic commercial real estate & CRM entities (brokers, companies across APAC/EMEA/US, sq ft ranges, Grade A/B buildings, lease terms, deal IDs, currencies, phones/emails).
-- Strict adherence to the 4-class boundary rules above (e.g. do NOT generate incomplete updates or destructive deletes for DB_WRITE; keep those in CLARIFICATION_REQUIRED).
+- Strict adherence to the 4-class boundary rules above (e.g. do NOT generate incomplete updates or destructive/bulk overrides for DB_WRITE; keep those in CLARIFICATION_REQUIRED).
 """
     return _generate_with_models(client, f"{PROMPT_SYSTEM_GUIDE}\n\n{user_prompt}", SingleTurnBatchResponse)
 
@@ -244,13 +252,22 @@ def call_gemini_multi_turn(
     intent: str,
     batch_size: int,
     scenario_focus: str,
+    existing_samples: List[str] | None = None,
 ) -> MultiTurnBatchResponse:
+    avoid_pool = (existing_samples or [])[-20:]
+    avoid_block = (
+        "\nDo NOT reuse or closely paraphrase these existing follow-up prompts:\n"
+        + "\n".join(f"- {s}" for s in avoid_pool)
+        if avoid_pool
+        else ""
+    )
     user_prompt = f"""Target Intent for the FINAL user turn: {intent}
 Scenario Focus: {scenario_focus}
-
+{avoid_block}
 Generate {batch_size} unique multi-turn conversations (2 to 4 alternating user/assistant turns in `chat_history`, plus a final `prompt` from the user).
 CRITICAL REQUIREMENT:
-- The final `prompt` MUST be a natural follow-up whose true 4-class intent ({intent}) depends meaningfully on `chat_history` (e.g., resolved reference -> DB_READ/DB_WRITE; still ambiguous/destructive -> CLARIFICATION_REQUIRED; conceptual pivot -> GENERAL_CHAT).
+- The final `prompt` MUST be a natural, varied follow-up whose true 4-class intent ({intent}) depends meaningfully on `chat_history` (e.g., resolved reference -> DB_READ/DB_WRITE; still ambiguous/destructive -> CLARIFICATION_REQUIRED; conceptual pivot -> GENERAL_CHAT).
+- Every generated `prompt` must use fresh phrasing specific to its conversation — never repeat a canned opener across items.
 - All `intent` fields in `multi_turn_prompts` must be '{intent}'.
 """
     return _generate_with_models(client, f"{PROMPT_SYSTEM_GUIDE}\n\n{user_prompt}", MultiTurnBatchResponse)
@@ -259,8 +276,10 @@ CRITICAL REQUIREMENT:
 def main():
     parser = argparse.ArgumentParser(description="Seed-Guided 4-Class Synthetic Data Generator with Gemini API.")
     parser.add_argument("--target-total", type=int, default=1080, help="Target dataset size across 4 classes (default: 1080 = 270/class)")
-    parser.add_argument("--multi-turn-ratio", type=float, default=0.25, help="Fraction of multi-turn chat_history samples per class")
+    parser.add_argument("--multi-turn-ratio", type=float, default=0.35, help="Fraction of multi-turn chat_history samples per class")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reference sampling")
     args = parser.parse_args()
+    random.seed(args.seed)
 
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key or api_key.startswith("your_"):
@@ -277,13 +296,18 @@ def main():
     print(f"[INFO] Target per class: ~{per_class_target} ({per_class_target * len(CLASSES)} total across {len(CLASSES)} classes, multi_turn_ratio={args.multi_turn_ratio})")
 
     all_records: List[Dict[str, Any]] = []
+    seen_keys = set()
     for intent, items in seeds.items():
         for prompt_text in items:
-            all_records.append({
-                "text": prompt_text.strip(),
-                "label": intent,
-                "source": "seed",
-            })
+            txt = prompt_text.strip()
+            k = _dedup_key(txt)
+            if txt and k not in seen_keys:
+                seen_keys.add(k)
+                all_records.append({
+                    "text": txt,
+                    "label": intent,
+                    "source": "seed",
+                })
 
     for intent in CLASSES:
         seed_list = seeds.get(intent, [])
@@ -297,49 +321,64 @@ def main():
 
         themes = CLASS_SINGLE_THEMES[intent]
         if needed_single > 0:
-            batch_size = max(15, (needed_single + len(themes) - 1) // len(themes))
             gen_single = 0
-            for theme in themes:
-                if gen_single >= needed_single:
-                    break
-                req_count = min(batch_size, needed_single - gen_single)
-                print(f"   [Single-Turn] Theme: '{theme[:58]}...' | Requesting {req_count}...")
-                resp = call_gemini_single_turn(client, intent, seed_list, req_count, theme, existing_texts)
-                for sp in resp.synthetic_prompts:
-                    txt = sp.prompt.strip()
-                    all_records.append({
-                        "text": txt,
-                        "label": intent,
-                        "variation_type": sp.variation_type,
-                        "confidence": sp.confidence,
-                        "source": "gemini_synthetic",
-                    })
-                    existing_texts.append(txt)
-                    gen_single += 1
+            for round_idx in range(2):
+                for theme in themes:
+                    if gen_single >= needed_single:
+                        break
+                    remaining = needed_single - gen_single
+                    req_count = min(max(10, (remaining + len(themes) - 1) // len(themes)), remaining + 4)
+                    print(f"   [Single-Turn r{round_idx + 1}] Theme: '{theme[:58]}...' | Requesting {req_count}...")
+                    resp = call_gemini_single_turn(client, intent, seed_list, req_count, theme, existing_texts)
+                    for sp in resp.synthetic_prompts:
+                        if gen_single >= needed_single:
+                            break
+                        txt = sp.prompt.strip()
+                        k = _dedup_key(txt)
+                        if not txt or k in seen_keys:
+                            continue
+                        seen_keys.add(k)
+                        all_records.append({
+                            "text": txt,
+                            "label": intent,
+                            "variation_type": sp.variation_type,
+                            "confidence": sp.confidence,
+                            "source": "gemini_synthetic",
+                        })
+                        existing_texts.append(txt)
+                        gen_single += 1
 
         scenarios = CLASS_MULTI_TURN_SCENARIOS[intent]
         if needed_multi > 0:
-            mt_batch = max(15, (needed_multi + len(scenarios) - 1) // len(scenarios))
             gen_multi = 0
-            for scenario in scenarios:
-                if gen_multi >= needed_multi:
-                    break
-                req_count = min(mt_batch, needed_multi - gen_multi)
-                print(f"   [Multi-Turn] Scenario: '{scenario[:58]}...' | Requesting {req_count}...")
-                mt_resp = call_gemini_multi_turn(client, intent, req_count, scenario)
-                for mp in mt_resp.multi_turn_prompts:
-                    hist = [{"role": t.role, "content": t.content.strip()} for t in mp.chat_history if t.content.strip()]
-                    if not hist:
-                        continue
-                    all_records.append({
-                        "text": mp.prompt.strip(),
-                        "chat_history": hist,
-                        "label": intent,
-                        "variation_type": mp.variation_type,
-                        "confidence": mp.confidence,
-                        "source": "gemini_multi_turn",
-                    })
-                    gen_multi += 1
+            existing_mt: List[str] = []
+            for round_idx in range(2):
+                for scenario in scenarios:
+                    if gen_multi >= needed_multi:
+                        break
+                    remaining = needed_multi - gen_multi
+                    req_count = min(max(10, (remaining + len(scenarios) - 1) // len(scenarios)), remaining + 4)
+                    print(f"   [Multi-Turn r{round_idx + 1}] Scenario: '{scenario[:58]}...' | Requesting {req_count}...")
+                    mt_resp = call_gemini_multi_turn(client, intent, req_count, scenario, existing_mt)
+                    for mp in mt_resp.multi_turn_prompts:
+                        if gen_multi >= needed_multi:
+                            break
+                        hist = [{"role": t.role, "content": t.content.strip()} for t in mp.chat_history if t.content.strip()]
+                        txt = mp.prompt.strip()
+                        k = _dedup_key(txt, hist)
+                        if not hist or not txt or k in seen_keys:
+                            continue
+                        seen_keys.add(k)
+                        all_records.append({
+                            "text": txt,
+                            "chat_history": hist,
+                            "label": intent,
+                            "variation_type": mp.variation_type,
+                            "confidence": mp.confidence,
+                            "source": "gemini_multi_turn",
+                        })
+                        existing_mt.append(txt)
+                        gen_multi += 1
 
     raw_file = RAW_DIR / "synthetic_prompts.json"
     with open(raw_file, "w", encoding="utf-8") as f:

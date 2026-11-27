@@ -11,11 +11,12 @@ Evaluates single-turn and multi-turn test samples from `data/processed/test.json
 """
 
 import sys
+import math
 import time
 import json
 import argparse
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
@@ -129,6 +130,8 @@ def evaluate_ollama_model(
     latencies: List[float] = []
     errors: List[Dict[str, Any]] = []
     mt_indices: List[int] = []
+    nll_sum = 0.0
+    brier_sum = 0.0
 
     for idx, rec in enumerate(records):
         hist = rec.get("chat_history") or []
@@ -139,6 +142,13 @@ def evaluate_ollama_model(
         y_raw.append(res.raw_prediction)
         y_guarded.append(res.route)
         latencies.append(res.latency_ms or 0.0)
+
+        p_true = float(res.probabilities.get(rec["label"], 0.0))
+        nll_sum += -math.log(max(p_true, 1e-12))
+        brier_sum += sum(
+            (float(res.probabilities.get(c, 0.0)) - (1.0 if c == rec["label"] else 0.0)) ** 2
+            for c in CLASSES
+        )
 
         if res.route != rec["label"]:
             errors.append({
@@ -162,6 +172,10 @@ def evaluate_ollama_model(
             4,
         )
 
+    n_samples = max(1, len(records))
+    mean_nll = round(nll_sum / n_samples, 4)
+    mean_brier = round(brier_sum / n_samples, 4)
+
     print("\n" + "=" * 65)
     print(f"PERFORMANCE SUMMARY: {display_name}")
     print("=" * 65)
@@ -169,6 +183,7 @@ def evaluate_ollama_model(
     print(f"Guarded Macro F1      : {guarded_metrics['macro_f1']:.4f}   (Raw: {raw_metrics['macro_f1']:.4f})")
     print(f"DB_WRITE Recall       : {guarded_metrics['db_write_recall'] * 100:.2f}%  (Raw: {raw_metrics['db_write_recall'] * 100:.2f}%)")
     print(f"CLARIFICATION Recall  : {guarded_metrics['clarification_recall'] * 100:.2f}%  (Raw: {raw_metrics['clarification_recall'] * 100:.2f}%)")
+    print(f"Calibration NLL/Brier : NLL={mean_nll:.4f}  Brier={mean_brier:.4f}")
     if mt_acc is not None:
         print(f"Multi-Turn Accuracy   : {mt_acc * 100:.2f}% ({len(mt_indices)} samples)")
     print(f"Cold-Start Latency    : {cold_start_ms:.2f} ms")
@@ -202,6 +217,8 @@ def evaluate_ollama_model(
         "weighted_f1": guarded_metrics["weighted_f1"],
         "db_write_recall": guarded_metrics["db_write_recall"],
         "clarification_recall": guarded_metrics["clarification_recall"],
+        "calibration_nll": mean_nll,
+        "calibration_brier": mean_brier,
         "per_class": guarded_metrics["per_class"],
         "raw": raw_metrics,
         "cold_start_ms": cold_start_ms,
@@ -213,10 +230,34 @@ def evaluate_ollama_model(
     }
 
 
+def check_regression(
+    candidate: Dict[str, Any],
+    baseline: Dict[str, Any],
+    tolerance: float = 0.005,
+) -> Tuple[bool, List[str]]:
+    """Checks candidate metrics against baseline within tolerance. Returns (passed, failure_reasons)."""
+    checks = [
+        ("accuracy", "Accuracy"),
+        ("macro_f1", "Macro F1"),
+        ("db_write_recall", "DB_WRITE Recall"),
+        ("clarification_recall", "CLARIFICATION Recall"),
+    ]
+    failures: List[str] = []
+    for key, label in checks:
+        cand_v = float(candidate.get(key, 0.0))
+        base_v = float(baseline.get(key, 0.0))
+        if cand_v < base_v - tolerance:
+            failures.append(f"{label} regressed: {cand_v:.4f} < {base_v:.4f} - {tolerance:.4f}")
+    return len(failures) == 0, failures
+
+
 def main():
     parser = argparse.ArgumentParser(description="Evaluate the fine-tuned 4-class Ollama Qwen2.5-0.5B Intent Router on test.jsonl.")
     parser.add_argument("--ollama-model", type=str, default=None, help="Ollama model name override (default from .env/config)")
     parser.add_argument("--compare-untuned-ollama", type=str, default=None, help="Optional extra Ollama model to compare alongside (e.g. qwen2.5:0.5b)")
+    parser.add_argument("--baseline-report", type=Path, default=None, help="Optional saved evaluation_report.json to compare against without re-running Ollama")
+    parser.add_argument("--fail-on-regression", action="store_true", help="Exit non-zero if candidate regresses vs comparison/baseline model")
+    parser.add_argument("--regression-tolerance", type=float, default=0.005, help="Allowed metric delta before triggering regression failure")
     parser.add_argument(
         "--output-report",
         type=str,
@@ -232,6 +273,7 @@ def main():
         "ollama": evaluate_ollama_model(records=records, ollama_model=args.ollama_model)
     }
 
+    baseline_metrics: Optional[Dict[str, Any]] = None
     if args.compare_untuned_ollama:
         try:
             key = f"ollama_compare_{args.compare_untuned_ollama}"
@@ -240,8 +282,15 @@ def main():
                 ollama_model=args.compare_untuned_ollama,
                 label_override=key,
             )
+            baseline_metrics = results[key]
         except Exception as e:
             print(f"[WARN] Skipping comparison model '{args.compare_untuned_ollama}': {e}")
+
+    if baseline_metrics is None and args.baseline_report and args.baseline_report.exists():
+        saved = json.loads(args.baseline_report.read_text(encoding="utf-8"))
+        baseline_metrics = saved.get("ollama")
+        if baseline_metrics:
+            results[f"baseline_{baseline_metrics.get('model', args.baseline_report.name)}"] = baseline_metrics
 
     if len(results) >= 2:
         print("\n" + "=" * 104)
@@ -274,6 +323,20 @@ def main():
         with open(report_path, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
         print(f"[OK] Saved evaluation report to: {report_path}")
+
+    if args.fail_on_regression:
+        if baseline_metrics is None:
+            raise SystemExit("[FAIL] --fail-on-regression requires --compare-untuned-ollama or a valid --baseline-report.")
+        passed, reasons = check_regression(
+            results["ollama"],
+            baseline_metrics,
+            tolerance=args.regression_tolerance,
+        )
+        if not passed:
+            for r in reasons:
+                print(f"[REGRESSION] {r}")
+            raise SystemExit(1)
+        print("[OK] Regression gate passed against baseline!")
 
 
 if __name__ == "__main__":

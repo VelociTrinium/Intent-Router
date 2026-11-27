@@ -368,6 +368,109 @@ def test_write_modelfile_chatml(tmp_path):
     assert "<|im_start|>" in content
     assert "ASK:" in content
     assert "PARAMETER num_predict 1" in content
+    assert "PARAMETER num_ctx 768" in content
+
+
+def test_post_model_destructive_write_guard(test_engine):
+    engine, mock = test_engine
+
+    # 1. Model wrongly predicts DB_WRITE on bulk override -> intercepted to CLARIFICATION_REQUIRED
+    mock.set_probabilities({
+        "GENERAL_CHAT": 0.005,
+        "DB_READ": 0.001,
+        "DB_WRITE": 0.992,
+        "CLARIFICATION_REQUIRED": 0.002,
+    })
+    res_bulk = engine.route("Override every active deal stage status to 'Terminated' for the entire EMEA region.")
+    assert res_bulk.route == "CLARIFICATION_REQUIRED"
+    assert res_bulk.raw_prediction == "DB_WRITE"
+    assert res_bulk.fallback_triggered is True
+
+    # 2. Conceptual question about DROP TABLE -> GENERAL_CHAT is NOT overridden
+    mock.set_probabilities({
+        "GENERAL_CHAT": 0.96,
+        "DB_READ": 0.02,
+        "DB_WRITE": 0.01,
+        "CLARIFICATION_REQUIRED": 0.01,
+    })
+    res_chat = engine.route("What does DROP TABLE do in PostgreSQL?")
+    assert res_chat.route == "GENERAL_CHAT"
+    assert res_chat.fallback_triggered is False
+
+    # 3. Negative-write guard -> DB_READ is NOT overridden
+    mock.set_probabilities({
+        "GENERAL_CHAT": 0.02,
+        "DB_READ": 0.94,
+        "DB_WRITE": 0.02,
+        "CLARIFICATION_REQUIRED": 0.02,
+    })
+    res_read = engine.route("Don't delete all records — just show me how many inactive accounts exist.")
+    assert res_read.route == "DB_READ"
+    assert res_read.fallback_triggered is False
+
+    # 4. Scoped single-broker account handoff -> valid DB_WRITE is NOT blocked
+    mock.set_probabilities({
+        "GENERAL_CHAT": 0.01,
+        "DB_READ": 0.02,
+        "DB_WRITE": 0.95,
+        "CLARIFICATION_REQUIRED": 0.02,
+    })
+    res_handoff = engine.route("Kindly reassign all accounts currently managed by broker ID 4418 to broker ID 5521 effective immediately.")
+    assert res_handoff.route == "DB_WRITE"
+    assert res_handoff.fallback_triggered is False
+
+
+def test_evaluate_check_regression():
+    from scripts.evaluate import check_regression
+
+    baseline = {"accuracy": 0.9755, "macro_f1": 0.9754, "db_write_recall": 1.0, "clarification_recall": 1.0}
+    better = {"accuracy": 0.9880, "macro_f1": 0.9880, "db_write_recall": 1.0, "clarification_recall": 1.0}
+    worse = {"accuracy": 0.9500, "macro_f1": 0.9450, "db_write_recall": 0.92, "clarification_recall": 1.0}
+
+    ok, reasons = check_regression(better, baseline, tolerance=0.005)
+    assert ok is True
+    assert reasons == []
+
+    bad, reasons_bad = check_regression(worse, baseline, tolerance=0.005)
+    assert bad is False
+    assert len(reasons_bad) >= 2
+
+
+def test_encode_sample_and_collator_single_decision_token():
+    from scripts.train_ollama import DynamicPaddingCollator, compute_class_weights, encode_sample
+
+    class FakeTokenizer:
+        eos_token = "<|im_end|>"
+        pad_token_id = 0
+        _map = {"CHAT": 101, "READ": 102, "WRITE": 103, "ASK": 104}
+
+        def encode(self, text, add_special_tokens=False):
+            return [self._map[text]]
+
+        def apply_chat_template(self, messages, tokenize=True, add_generation_prompt=True):
+            # Variable length by message content
+            total = sum(len(m["content"].split()) for m in messages) + 4
+            return list(range(10, 10 + total))
+
+    tok = FakeTokenizer()
+    rows = [
+        {"text": "Show all deals", "label": "DB_READ", "chat_history": []},
+        {"text": "Update it", "label": "CLARIFICATION_REQUIRED", "chat_history": []},
+    ]
+    enc = [encode_sample(r, tok, max_seq_length=128) for r in rows]
+    assert enc[0]["target_vocab_id"] == 102
+    assert enc[0]["target_class_idx"] == 1
+    assert enc[0]["decision_pos"] == len(enc[0]["prompt_ids"]) - 1
+
+    batch = DynamicPaddingCollator(pad_token_id=0)(enc)
+    assert batch["input_ids"].shape[0] == 2
+    assert batch["decision_pos"].tolist() == [enc[0]["decision_pos"], enc[1]["decision_pos"]]
+    assert batch["target_vocab_ids"].tolist() == [102, 104]
+    assert batch["target_class_idx"].tolist() == [1, 3]
+
+    w = compute_class_weights(rows)
+    assert w.shape == (4,)
+    assert abs(float(w.mean()) - 1.0) < 1e-4
 
 
 def test_ollama_router_raises_on_unparseable_response():

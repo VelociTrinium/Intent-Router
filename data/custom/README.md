@@ -20,6 +20,10 @@ Drop or append your real classified examples into `working_examples.json` (or an
     "label": "CLARIFICATION_REQUIRED"
   },
   {
+    "prompt": "Hello how are you?",
+    "label": "GENERAL_CHAT"
+  },
+  {
     "prompt": "Actually just show them first, don't delete anything yet.",
     "label": "DB_READ",
     "chat_history": [

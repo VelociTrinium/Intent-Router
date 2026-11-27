@@ -91,7 +91,7 @@ def ensure_converter(converter_path: Path) -> Path:
     return converter_path
 
 
-def write_modelfile(modelfile_path: Path, gguf_filename: str):
+def write_modelfile(modelfile_path: Path, gguf_filename: str, num_ctx: int = 768):
     stop_lines = "\n".join(f'PARAMETER stop "{tok}"' for tok in CHATML_STOP_TOKENS)
     content = (
         f"FROM ./{gguf_filename}\n\n"
@@ -100,10 +100,11 @@ def write_modelfile(modelfile_path: Path, gguf_filename: str):
         "PARAMETER temperature 0\n"
         "PARAMETER top_k 10\n"
         "PARAMETER num_predict 1\n"
+        f"PARAMETER num_ctx {num_ctx}\n"
         f"{stop_lines}\n"
     )
     modelfile_path.write_text(content, encoding="utf-8")
-    print(f"[OK] Wrote Modelfile (chatml) to {modelfile_path}")
+    print(f"[OK] Wrote Modelfile (chatml, num_ctx={num_ctx}) to {modelfile_path}")
 
 
 def resolve_ollama_ref(model_name: str, version: Optional[str] = None) -> Tuple[str, str]:
@@ -130,6 +131,7 @@ def main():
     parser.add_argument("--ollama-quantize", type=str, default=None, help="Optional `ollama create -q` target (e.g. q4_K_M)")
     parser.add_argument("--model-name", type=str, default="intent-router-qwen2.5-0.5b-instruct", help="Ollama model repository name")
     parser.add_argument("--version", type=str, default="v1", help="Ollama model version tag (e.g. v1, 1.0.0, latest; empty to omit)")
+    parser.add_argument("--num-ctx", type=int, default=768, help="Ollama KV context window size (default: 768)")
     parser.add_argument("--skip-ollama-create", action="store_true", help="Only export GGUF + Modelfile without calling ollama create")
     args = parser.parse_args()
 
@@ -154,7 +156,7 @@ def main():
     print(f"[OK] Exported GGUF ({size_mb:.1f} MB): {gguf_path}")
 
     modelfile_path = args.out_dir / "Modelfile"
-    write_modelfile(modelfile_path, gguf_filename)
+    write_modelfile(modelfile_path, gguf_filename, num_ctx=args.num_ctx)
 
     if args.skip_ollama_create:
         print("[INFO] --skip-ollama-create set. Skipping `ollama create`.")

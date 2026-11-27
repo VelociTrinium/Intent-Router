@@ -1,83 +1,256 @@
 {
   "ollama": {
-    "model": "intent-router-qwen2.5-0.5b-instruct:v2",
-    "sample_count": 163,
+    "model": "intent-router-qwen2.5-0.5b-instruct:v3",
+    "sample_count": 173,
     "multi_turn_count": 44,
     "multi_turn_accuracy": 1.0,
-    "accuracy": 0.9755,
-    "macro_f1": 0.9754,
-    "weighted_f1": 0.9751,
+    "accuracy": 0.9884,
+    "macro_f1": 0.9884,
+    "weighted_f1": 0.9884,
     "db_write_recall": 1.0,
-    "clarification_recall": 1.0,
+    "clarification_recall": 0.9744,
+    "calibration_nll": 0.0487,
+    "calibration_brier": 0.024,
     "per_class": {
       "GENERAL_CHAT": {
-        "precision": 1.0,
-        "recall": 0.9048,
-        "f1": 0.95,
-        "support": 42
+        "precision": 0.9792,
+        "recall": 1.0,
+        "f1": 0.9895,
+        "support": 47
       },
       "DB_READ": {
-        "precision": 0.9545,
-        "recall": 1.0,
-        "f1": 0.9767,
-        "support": 42
+        "precision": 1.0,
+        "recall": 0.9773,
+        "f1": 0.9885,
+        "support": 44
       },
       "DB_WRITE": {
-        "precision": 0.9767,
+        "precision": 0.9773,
         "recall": 1.0,
-        "f1": 0.9882,
-        "support": 42
+        "f1": 0.9885,
+        "support": 43
       },
       "CLARIFICATION_REQUIRED": {
-        "precision": 0.9737,
-        "recall": 1.0,
-        "f1": 0.9867,
-        "support": 37
+        "precision": 1.0,
+        "recall": 0.9744,
+        "f1": 0.987,
+        "support": 39
       }
     },
     "raw": {
-      "accuracy": 0.9755,
-      "macro_precision": 0.9762,
-      "macro_recall": 0.9762,
-      "macro_f1": 0.9754,
-      "weighted_f1": 0.9751,
+      "accuracy": 0.9827,
+      "macro_precision": 0.9841,
+      "macro_recall": 0.9815,
+      "macro_f1": 0.9825,
+      "weighted_f1": 0.9826,
+      "db_write_recall": 1.0,
+      "clarification_recall": 0.9487,
+      "per_class": {
+        "GENERAL_CHAT": {
+          "precision": 0.9592,
+          "recall": 1.0,
+          "f1": 0.9792,
+          "support": 47
+        },
+        "DB_READ": {
+          "precision": 1.0,
+          "recall": 0.9773,
+          "f1": 0.9885,
+          "support": 44
+        },
+        "DB_WRITE": {
+          "precision": 0.9773,
+          "recall": 1.0,
+          "f1": 0.9885,
+          "support": 43
+        },
+        "CLARIFICATION_REQUIRED": {
+          "precision": 1.0,
+          "recall": 0.9487,
+          "f1": 0.9737,
+          "support": 39
+        }
+      }
+    },
+    "cold_start_ms": 2074.08,
+    "latency_mean_ms": 203.34,
+    "latency_p50_ms": 160.22,
+    "latency_p95_ms": 421.13,
+    "num_errors": 2,
+    "errors": [
+      {
+        "index": 47,
+        "prompt": "what is the deal value for pursuit #9012",
+        "has_history": false,
+        "ground_truth": "DB_READ",
+        "raw_prediction": "GENERAL_CHAT",
+        "predicted": "GENERAL_CHAT",
+        "confidence": 0.8284,
+        "probabilities": {
+          "GENERAL_CHAT": 0.8284,
+          "DB_READ": 0.128,
+          "DB_WRITE": 0.0071,
+          "CLARIFICATION_REQUIRED": 0.0365
+        }
+      },
+      {
+        "index": 85,
+        "prompt": "schedule meeting tomorrow",
+        "has_history": false,
+        "ground_truth": "CLARIFICATION_REQUIRED",
+        "raw_prediction": "DB_WRITE",
+        "predicted": "DB_WRITE",
+        "confidence": 0.8149,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0031,
+          "DB_READ": 0.0032,
+          "DB_WRITE": 0.8149,
+          "CLARIFICATION_REQUIRED": 0.1788
+        }
+      }
+    ]
+  },
+  "ollama_compare_intent-router-qwen2.5-0.5b-instruct:v2": {
+    "model": "intent-router-qwen2.5-0.5b-instruct:v2",
+    "sample_count": 173,
+    "multi_turn_count": 44,
+    "multi_turn_accuracy": 1.0,
+    "accuracy": 0.9538,
+    "macro_f1": 0.9539,
+    "weighted_f1": 0.9524,
+    "db_write_recall": 1.0,
+    "clarification_recall": 1.0,
+    "calibration_nll": 0.7554,
+    "calibration_brier": 0.0919,
+    "per_class": {
+      "GENERAL_CHAT": {
+        "precision": 1.0,
+        "recall": 0.8298,
+        "f1": 0.907,
+        "support": 47
+      },
+      "DB_READ": {
+        "precision": 0.9167,
+        "recall": 1.0,
+        "f1": 0.9565,
+        "support": 44
+      },
+      "DB_WRITE": {
+        "precision": 0.9556,
+        "recall": 1.0,
+        "f1": 0.9773,
+        "support": 43
+      },
+      "CLARIFICATION_REQUIRED": {
+        "precision": 0.9512,
+        "recall": 1.0,
+        "f1": 0.975,
+        "support": 39
+      }
+    },
+    "raw": {
+      "accuracy": 0.9538,
+      "macro_precision": 0.9559,
+      "macro_recall": 0.9574,
+      "macro_f1": 0.9539,
+      "weighted_f1": 0.9524,
       "db_write_recall": 1.0,
       "clarification_recall": 1.0,
       "per_class": {
         "GENERAL_CHAT": {
           "precision": 1.0,
-          "recall": 0.9048,
-          "f1": 0.95,
-          "support": 42
+          "recall": 0.8298,
+          "f1": 0.907,
+          "support": 47
         },
         "DB_READ": {
-          "precision": 0.9545,
+          "precision": 0.9167,
           "recall": 1.0,
-          "f1": 0.9767,
-          "support": 42
+          "f1": 0.9565,
+          "support": 44
         },
         "DB_WRITE": {
-          "precision": 0.9767,
+          "precision": 0.9556,
           "recall": 1.0,
-          "f1": 0.9882,
-          "support": 42
+          "f1": 0.9773,
+          "support": 43
         },
         "CLARIFICATION_REQUIRED": {
-          "precision": 0.9737,
+          "precision": 0.9512,
           "recall": 1.0,
-          "f1": 0.9867,
-          "support": 37
+          "f1": 0.975,
+          "support": 39
         }
       }
     },
-    "cold_start_ms": 115.85,
-    "latency_mean_ms": 181.55,
-    "latency_p50_ms": 151.96,
-    "latency_p95_ms": 361.35,
-    "num_errors": 4,
+    "cold_start_ms": 2162.23,
+    "latency_mean_ms": 203.18,
+    "latency_p50_ms": 163.26,
+    "latency_p95_ms": 406.15,
+    "num_errors": 8,
     "errors": [
       {
-        "index": 5,
+        "index": 2,
+        "prompt": "is this pulling from a real database?",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.9836,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0052,
+          "DB_READ": 0.0112,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.9836
+        }
+      },
+      {
+        "index": 7,
+        "prompt": "draft a quick recap of our H1 leasing activity",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 0.9983,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0017,
+          "DB_READ": 0.9983,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 17,
+        "prompt": "can you write a sample SQL query to find duplicates by email",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 1.0,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0,
+          "DB_READ": 1.0,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 70,
+        "prompt": "can you write a sample query to count rows grouped by city",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 1.0,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0,
+          "DB_READ": 1.0,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 93,
         "prompt": "is this connected to live data",
         "has_history": false,
         "ground_truth": "GENERAL_CHAT",
@@ -92,22 +265,7 @@
         }
       },
       {
-        "index": 78,
-        "prompt": "can you draft a summary of our Q3 performance",
-        "has_history": false,
-        "ground_truth": "GENERAL_CHAT",
-        "raw_prediction": "DB_READ",
-        "predicted": "DB_READ",
-        "confidence": 1.0,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0,
-          "DB_READ": 1.0,
-          "DB_WRITE": 0.0,
-          "CLARIFICATION_REQUIRED": 0.0
-        }
-      },
-      {
-        "index": 85,
+        "index": 94,
         "prompt": "Please circulate this notice: fire drill scheduled across all floors of the Hong Kong office next Tuesday at 11 AM.",
         "has_history": false,
         "ground_truth": "GENERAL_CHAT",
@@ -122,8 +280,23 @@
         }
       },
       {
+        "index": 108,
+        "prompt": "circulate this notice: office kitchen will be renovated next week",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_WRITE",
+        "predicted": "DB_WRITE",
+        "confidence": 0.9295,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0688,
+          "DB_READ": 0.0005,
+          "DB_WRITE": 0.9295,
+          "CLARIFICATION_REQUIRED": 0.0012
+        }
+      },
+      {
         "index": 128,
-        "prompt": "can you write a sample query to count rows grouped by city",
+        "prompt": "can you draft a summary of our Q3 performance",
         "has_history": false,
         "ground_truth": "GENERAL_CHAT",
         "raw_prediction": "DB_READ",
@@ -134,295 +307,6 @@
           "DB_READ": 1.0,
           "DB_WRITE": 0.0,
           "CLARIFICATION_REQUIRED": 0.0
-        }
-      }
-    ]
-  },
-  "ollama_compare_intent-router-qwen2.5-0.5b-instruct:v1": {
-    "model": "intent-router-qwen2.5-0.5b-instruct:v1",
-    "sample_count": 163,
-    "multi_turn_count": 44,
-    "multi_turn_accuracy": 0.8409,
-    "accuracy": 0.9141,
-    "macro_f1": 0.9122,
-    "weighted_f1": 0.9137,
-    "db_write_recall": 0.9286,
-    "clarification_recall": 0.8378,
-    "per_class": {
-      "GENERAL_CHAT": {
-        "precision": 0.8936,
-        "recall": 1.0,
-        "f1": 0.9438,
-        "support": 42
-      },
-      "DB_READ": {
-        "precision": 1.0,
-        "recall": 0.881,
-        "f1": 0.9367,
-        "support": 42
-      },
-      "DB_WRITE": {
-        "precision": 0.8864,
-        "recall": 0.9286,
-        "f1": 0.907,
-        "support": 42
-      },
-      "CLARIFICATION_REQUIRED": {
-        "precision": 0.8857,
-        "recall": 0.8378,
-        "f1": 0.8611,
-        "support": 37
-      }
-    },
-    "raw": {
-      "accuracy": 0.9141,
-      "macro_precision": 0.9164,
-      "macro_recall": 0.9118,
-      "macro_f1": 0.9122,
-      "weighted_f1": 0.9137,
-      "db_write_recall": 0.9286,
-      "clarification_recall": 0.8378,
-      "per_class": {
-        "GENERAL_CHAT": {
-          "precision": 0.8936,
-          "recall": 1.0,
-          "f1": 0.9438,
-          "support": 42
-        },
-        "DB_READ": {
-          "precision": 1.0,
-          "recall": 0.881,
-          "f1": 0.9367,
-          "support": 42
-        },
-        "DB_WRITE": {
-          "precision": 0.8864,
-          "recall": 0.9286,
-          "f1": 0.907,
-          "support": 42
-        },
-        "CLARIFICATION_REQUIRED": {
-          "precision": 0.8857,
-          "recall": 0.8378,
-          "f1": 0.8611,
-          "support": 37
-        }
-      }
-    },
-    "cold_start_ms": 132.27,
-    "latency_mean_ms": 194.69,
-    "latency_p50_ms": 155.66,
-    "latency_p95_ms": 404.16,
-    "num_errors": 14,
-    "errors": [
-      {
-        "index": 3,
-        "prompt": "Assign it to the new manager.",
-        "has_history": true,
-        "ground_truth": "CLARIFICATION_REQUIRED",
-        "raw_prediction": "DB_WRITE",
-        "predicted": "DB_WRITE",
-        "confidence": 0.7961,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0029,
-          "DB_READ": 0.0,
-          "DB_WRITE": 0.7961,
-          "CLARIFICATION_REQUIRED": 0.201
-        }
-      },
-      {
-        "index": 11,
-        "prompt": "It was with Sarah Wong today at 3 PM regarding the Hong Kong expansion lease terms.",
-        "has_history": true,
-        "ground_truth": "DB_WRITE",
-        "raw_prediction": "GENERAL_CHAT",
-        "predicted": "GENERAL_CHAT",
-        "confidence": 0.9941,
-        "probabilities": {
-          "GENERAL_CHAT": 0.9941,
-          "DB_READ": 0.0022,
-          "DB_WRITE": 0.0036,
-          "CLARIFICATION_REQUIRED": 0.0001
-        }
-      },
-      {
-        "index": 14,
-        "prompt": "Actually just show the 14 leads first, don't archive anything, show me the overlapping accounts instead.",
-        "has_history": true,
-        "ground_truth": "DB_READ",
-        "raw_prediction": "CLARIFICATION_REQUIRED",
-        "predicted": "CLARIFICATION_REQUIRED",
-        "confidence": 0.8571,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0822,
-          "DB_READ": 0.027,
-          "DB_WRITE": 0.0337,
-          "CLARIFICATION_REQUIRED": 0.8571
-        }
-      },
-      {
-        "index": 52,
-        "prompt": "Hi team, I am Arjun Kapur from FinEdge Corp. We are urgently looking to lease 22,000 sq ft Grade A office space in BKC Mumbai with a budget of INR 240/sq ft and target move-in in Q1. Can we meet this Thursday at 3 PM? Reach me at arjun.kapur@finedge.in or +91 98201 77880.",
-        "has_history": false,
-        "ground_truth": "DB_WRITE",
-        "raw_prediction": "GENERAL_CHAT",
-        "predicted": "GENERAL_CHAT",
-        "confidence": 0.6122,
-        "probabilities": {
-          "GENERAL_CHAT": 0.6122,
-          "DB_READ": 0.0002,
-          "DB_WRITE": 0.3845,
-          "CLARIFICATION_REQUIRED": 0.0031
-        }
-      },
-      {
-        "index": 54,
-        "prompt": "Actually just show the 14 leads first, don't archive anything, query the regional cache data.",
-        "has_history": true,
-        "ground_truth": "DB_READ",
-        "raw_prediction": "CLARIFICATION_REQUIRED",
-        "predicted": "CLARIFICATION_REQUIRED",
-        "confidence": 0.9258,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0179,
-          "DB_READ": 0.026,
-          "DB_WRITE": 0.0303,
-          "CLARIFICATION_REQUIRED": 0.9258
-        }
-      },
-      {
-        "index": 69,
-        "prompt": "Actually just show the 14 leads first, don't archive anything, query the API error rows.",
-        "has_history": true,
-        "ground_truth": "DB_READ",
-        "raw_prediction": "CLARIFICATION_REQUIRED",
-        "predicted": "CLARIFICATION_REQUIRED",
-        "confidence": 0.9379,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0226,
-          "DB_READ": 0.0137,
-          "DB_WRITE": 0.0258,
-          "CLARIFICATION_REQUIRED": 0.9379
-        }
-      },
-      {
-        "index": 84,
-        "prompt": "Override every active deal stage status to 'Terminated' for the entire EMEA region.",
-        "has_history": false,
-        "ground_truth": "CLARIFICATION_REQUIRED",
-        "raw_prediction": "DB_WRITE",
-        "predicted": "DB_WRITE",
-        "confidence": 0.9928,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0065,
-          "DB_READ": 0.0001,
-          "DB_WRITE": 0.9928,
-          "CLARIFICATION_REQUIRED": 0.0006
-        }
-      },
-      {
-        "index": 88,
-        "prompt": "Send them an email about the lease renewal",
-        "has_history": false,
-        "ground_truth": "CLARIFICATION_REQUIRED",
-        "raw_prediction": "DB_WRITE",
-        "predicted": "DB_WRITE",
-        "confidence": 0.6107,
-        "probabilities": {
-          "GENERAL_CHAT": 0.3583,
-          "DB_READ": 0.0,
-          "DB_WRITE": 0.6107,
-          "CLARIFICATION_REQUIRED": 0.031
-        }
-      },
-      {
-        "index": 94,
-        "prompt": "Change her title to Managing Director.",
-        "has_history": true,
-        "ground_truth": "CLARIFICATION_REQUIRED",
-        "raw_prediction": "DB_WRITE",
-        "predicted": "DB_WRITE",
-        "confidence": 0.9688,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0021,
-          "DB_READ": 0.0,
-          "DB_WRITE": 0.9688,
-          "CLARIFICATION_REQUIRED": 0.0291
-        }
-      },
-      {
-        "index": 118,
-        "prompt": "Don't add a new contact, just retrieve the current email and direct line for John Doe at Blackstone New York.",
-        "has_history": false,
-        "ground_truth": "DB_READ",
-        "raw_prediction": "DB_WRITE",
-        "predicted": "DB_WRITE",
-        "confidence": 0.9657,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0294,
-          "DB_READ": 0.0011,
-          "DB_WRITE": 0.9657,
-          "CLARIFICATION_REQUIRED": 0.0038
-        }
-      },
-      {
-        "index": 123,
-        "prompt": "Hi, I'm Samir Patel from Patel Hospitality Group. We are looking to sell a 180-key business hotel asset in Whitefield, Bengaluru for approx INR 220 Crore and want Capital Markets representation. samir.patel@patelhospitality.in.",
-        "has_history": false,
-        "ground_truth": "DB_WRITE",
-        "raw_prediction": "GENERAL_CHAT",
-        "predicted": "GENERAL_CHAT",
-        "confidence": 0.7103,
-        "probabilities": {
-          "GENERAL_CHAT": 0.7103,
-          "DB_READ": 0.0002,
-          "DB_WRITE": 0.2891,
-          "CLARIFICATION_REQUIRED": 0.0004
-        }
-      },
-      {
-        "index": 126,
-        "prompt": "Actually just show the 14 leads first, don't archive anything, fetch the calendar bookings instead.",
-        "has_history": true,
-        "ground_truth": "DB_READ",
-        "raw_prediction": "CLARIFICATION_REQUIRED",
-        "predicted": "CLARIFICATION_REQUIRED",
-        "confidence": 0.637,
-        "probabilities": {
-          "GENERAL_CHAT": 0.0144,
-          "DB_READ": 0.318,
-          "DB_WRITE": 0.0306,
-          "CLARIFICATION_REQUIRED": 0.637
-        }
-      },
-      {
-        "index": 149,
-        "prompt": "Grade A office space in Bandra Kurla Complex \u2014 search records or insert new listing?",
-        "has_history": false,
-        "ground_truth": "CLARIFICATION_REQUIRED",
-        "raw_prediction": "GENERAL_CHAT",
-        "predicted": "GENERAL_CHAT",
-        "confidence": 0.8783,
-        "probabilities": {
-          "GENERAL_CHAT": 0.8783,
-          "DB_READ": 0.0001,
-          "DB_WRITE": 0.0045,
-          "CLARIFICATION_REQUIRED": 0.1171
-        }
-      },
-      {
-        "index": 159,
-        "prompt": "Revise the forecast fee on the Reliance deal",
-        "has_history": false,
-        "ground_truth": "CLARIFICATION_REQUIRED",
-        "raw_prediction": "GENERAL_CHAT",
-        "predicted": "GENERAL_CHAT",
-        "confidence": 0.7041,
-        "probabilities": {
-          "GENERAL_CHAT": 0.7041,
-          "DB_READ": 0.0,
-          "DB_WRITE": 0.0097,
-          "CLARIFICATION_REQUIRED": 0.2862
         }
       }
     ]

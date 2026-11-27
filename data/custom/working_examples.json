@@ -1,1 +1,392 @@
-[]
+[
+  {
+    "_comment": "GENERAL_CHAT: Live-data / architecture meta-questions (pinned to train; zero overlap with test.jsonl)",
+    "prompt": "is mira connected to live production data or mock data?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "is mira using a real-time database connection?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "does this assistant pull from a live database or a static snapshot?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "are your answers based on live CRM records right now?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "where does mira get its information from?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "does this chat have direct access to our live SQL server?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+
+  {
+    "_comment": "GENERAL_CHAT: Drafting / narrative summary / writing help WITHOUT DB lookup or save",
+    "prompt": "summarize our annual deal performance for the board deck",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "draft a brief narrative overview of this quarter's leasing commentary",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "can you write a polished summary of our H2 team achievements for the newsletter?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "help me draft a performance review paragraph for my associate",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "prepare a short written recap of our APAC market outlook for a client presentation",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "can you compose a quarterly summary blurb for our Q2 investor memo?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+
+  {
+    "_comment": "GENERAL_CHAT: Sample SQL / example scripts WITHOUT live execution",
+    "prompt": "write an example SELECT query to filter deals above 1 million",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "can you give me an example SQL query to group contacts by country and count them?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "show me how to write a GROUP BY query with a HAVING clause in SQL",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "write a sample SQL query using a CTE to rank top brokers by fee revenue",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "show me an example of a SQL join between the companies and contacts tables",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "help me write an example DELETE statement with a safe WHERE clause",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "what does TRUNCATE TABLE do in SQL compared to DELETE?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+
+  {
+    "_comment": "GENERAL_CHAT: Internal office notices / announcements / circulate memos",
+    "prompt": "FYI all: team lunch is on Friday at 1 PM in the cafeteria.",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "Please circulate to the team: mandatory compliance training webinar next Thursday at 10 AM.",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "share this notice with everyone: parking lot will be closed for resurfacing Monday through Wednesday",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "circulate this memo: annual leave balances must be utilized before December 31",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "please forward this announcement: office deep cleaning scheduled for Saturday morning",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "broadcast to all staff: quarterly town hall has been moved to 4 PM on Wednesday",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+
+  {
+    "_comment": "CLARIFICATION_REQUIRED: Destructive bulk operations / mass overrides",
+    "prompt": "Reset all pipeline statuses to draft across all accounts",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Override all pursuit stages in APAC to Closed Lost immediately",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Change every contact's email domain from @oldcompany.com to @newcompany.com",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Mass update all property grades in Mumbai from B to A",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Set every inactive broker account to terminated status across the CRM",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Reassign every pursuit in the system to broker Sarah Chen",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Update all deal values to zero for deals older than 2 years",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Mass reassign all EMEA accounts to a new broker",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+
+  {
+    "_comment": "CLARIFICATION_REQUIRED: Unresolved pronouns / vague target / ambiguous read-vs-write",
+    "prompt": "Forward that to the client",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Email them the updated commercial terms",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Send her the revised proposal",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Notify them about the inspection results",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Revise the forecast fee on the Tata deal",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Marina Bay office tower 30,000 sq ft — look up or add new listing?",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "train"
+  },
+  {
+    "prompt": "Update her role to Managing Director.",
+    "label": "CLARIFICATION_REQUIRED",
+    "chat_history": [
+      {"role": "user", "content": "Show me all contacts at Deloitte"},
+      {"role": "assistant", "content": "I found 5 contacts at Deloitte: Sarah Wong (VP), Lisa Chen (Director), Michelle Park (Manager), David Kim (Analyst), and James Liu (Partner). Which contact would you like to update?"}
+    ],
+    "split": "train"
+  },
+  {
+    "prompt": "Reassign it to the new regional lead.",
+    "label": "CLARIFICATION_REQUIRED",
+    "chat_history": [
+      {"role": "user", "content": "Show all accounts in APAC"},
+      {"role": "assistant", "content": "Here are your 15 APAC accounts. Which account would you like to modify?"}
+    ],
+    "split": "train"
+  },
+
+  {
+    "_comment": "DB_WRITE: Inbound client inquiry / introduction messages with concrete details",
+    "prompt": "Hello, I'm Nina Sharma from TechGrid Solutions. We need 35,000 sq ft of fitted office space in Whitefield, Bengaluru by Q2. Contact me at nina.sharma@techgrid.com or +91 80 2555 1234.",
+    "label": "DB_WRITE",
+    "split": "train"
+  },
+  {
+    "prompt": "This is Mark Reynolds from Atlas Logistics UK. We require 50,000 sq ft warehouse space in Jurong, Singapore. mark.reynolds@atlaslogistics.co.uk, +44 20 7946 1122.",
+    "label": "DB_WRITE",
+    "split": "train"
+  },
+  {
+    "prompt": "Inquiry: Jennifer Liu from Meridian Capital is looking for 20,000 sq ft premium office space in Central Hong Kong. jennifer.liu@meridiancap.hk, +852 2555 8800.",
+    "label": "DB_WRITE",
+    "split": "train"
+  },
+  {
+    "prompt": "Subject: Office Requirement. From: Ravi Kumar (ravi.kumar@greenleaf.in), GreenLeaf Pharma. We need 15,000 sq ft lab-ready space in Hyderabad. Available for a call Monday at 10 AM.",
+    "label": "DB_WRITE",
+    "split": "train"
+  },
+  {
+    "prompt": "Hi team, I am Daniel Cho from Vertex Robotics. We are seeking 40,000 sq ft R&D space in One-North, Singapore with Q3 move-in. Reach me at daniel.cho@vertexrobotics.sg or +65 9876 5432.",
+    "label": "DB_WRITE",
+    "split": "train"
+  },
+
+  {
+    "_comment": "DB_READ: Negative-write guards and natural pullback-to-read turns (diverse phrasing, no boilerplate)",
+    "prompt": "Do not create or modify any records, only fetch the latest activity log for Microsoft.",
+    "label": "DB_READ",
+    "split": "train"
+  },
+  {
+    "prompt": "Do not log a call — just check when our last interaction with HSBC was.",
+    "label": "DB_READ",
+    "split": "train"
+  },
+  {
+    "prompt": "Don't schedule anything, only show me all upcoming meetings for next week.",
+    "label": "DB_READ",
+    "split": "train"
+  },
+  {
+    "prompt": "Please don't delete all those accounts — just show me how many are inactive first.",
+    "label": "DB_READ",
+    "split": "train"
+  },
+  {
+    "prompt": "Hold off on archiving — show me the overlapping accounts first instead.",
+    "label": "DB_READ",
+    "chat_history": [
+      {"role": "user", "content": "Can you archive old leads?"},
+      {"role": "assistant", "content": "I found 14 leads without activity in 90+ days. Should I archive them?"}
+    ],
+    "split": "train"
+  },
+  {
+    "prompt": "Wait, don't delete those yet — just show me the list of inactive accounts first.",
+    "label": "DB_READ",
+    "chat_history": [
+      {"role": "user", "content": "Delete inactive accounts"},
+      {"role": "assistant", "content": "There are 23 inactive accounts. Should I proceed with deletion?"}
+    ],
+    "split": "train"
+  },
+  {
+    "prompt": "Before purging anything, pull up the stale calendar bookings so I can review them.",
+    "label": "DB_READ",
+    "chat_history": [
+      {"role": "user", "content": "Purge all past calendar bookings"},
+      {"role": "assistant", "content": "Purging calendar bookings is irreversible. Would you like to inspect them first?"}
+    ],
+    "split": "train"
+  },
+
+  {
+    "_comment": "DB_WRITE: Multi-turn clarification resolution (user supplies missing fields)",
+    "prompt": "Set it to USD 2,400,000 and stage Negotiation.",
+    "label": "DB_WRITE",
+    "chat_history": [
+      {"role": "user", "content": "Update the deal value on pursuit #7724"},
+      {"role": "assistant", "content": "What new deal value should I set for pursuit #7724?"}
+    ],
+    "split": "train"
+  },
+  {
+    "prompt": "Make it +1 214 555 8721",
+    "label": "DB_WRITE",
+    "chat_history": [
+      {"role": "user", "content": "Update Kevin Sauer's phone number at Microsoft"},
+      {"role": "assistant", "content": "What new phone number should I set for Kevin Sauer?"}
+    ],
+    "split": "train"
+  },
+  {
+    "prompt": "Yes, update her email to sarah.wong.new@hsbc.com",
+    "label": "DB_WRITE",
+    "chat_history": [
+      {"role": "user", "content": "Change Sarah Wong's email"},
+      {"role": "assistant", "content": "What is Sarah Wong's new email address?"}
+    ],
+    "split": "train"
+  },
+  {
+    "prompt": "rahul.mehta@microsoft.com",
+    "label": "DB_WRITE",
+    "chat_history": [
+      {"role": "user", "content": "Update Rahul Mehta's email at Microsoft"},
+      {"role": "assistant", "content": "What is the new email address for Rahul Mehta?"}
+    ],
+    "split": "train"
+  },
+
+  {
+    "_comment": "Pinned novel test-split golden probes (never leaked into train)",
+    "prompt": "is this pulling from a real database?",
+    "label": "GENERAL_CHAT",
+    "split": "test"
+  },
+  {
+    "prompt": "draft a quick recap of our H1 leasing activity",
+    "label": "GENERAL_CHAT",
+    "split": "test"
+  },
+  {
+    "prompt": "can you write a sample SQL query to find duplicates by email",
+    "label": "GENERAL_CHAT",
+    "split": "test"
+  },
+  {
+    "prompt": "circulate this notice: office kitchen will be renovated next week",
+    "label": "GENERAL_CHAT",
+    "split": "test"
+  },
+  {
+    "prompt": "What does DROP TABLE do in PostgreSQL?",
+    "label": "GENERAL_CHAT",
+    "split": "test"
+  },
+  {
+    "prompt": "Override all pursuit deal values in India to INR 0",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "test"
+  },
+  {
+    "prompt": "Mass update every contact title in London to Associate",
+    "label": "CLARIFICATION_REQUIRED",
+    "split": "test"
+  },
+  {
+    "prompt": "Hello, I'm Karen Lee from Titan Capital. We need 30,000 sq ft office in Raffles Place, Singapore. karen.lee@titancap.sg, +65 9234 5678.",
+    "label": "DB_WRITE",
+    "split": "test"
+  },
+  {
+    "prompt": "Don't update or create anything — just show me the current pursuit stages for all HSBC deals.",
+    "label": "DB_READ",
+    "split": "test"
+  },
+  {
+    "prompt": "Don't delete all records — just show me how many inactive leads exist from 2024.",
+    "label": "DB_READ",
+    "split": "test"
+  }
+]

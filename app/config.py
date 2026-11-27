@@ -49,6 +49,20 @@ class Settings(BaseSettings):
     API_PORT: int = Field(default=8000)
     DEBUG: bool = Field(default=False)
 
+    # Optional review logging for low-confidence / fallback predictions
+    ENABLE_REVIEW_LOGGING: bool = Field(
+        default=False,
+        description="Append low-confidence or fallback predictions to REVIEW_LOG_PATH for annotation",
+    )
+    REVIEW_CONFIDENCE_THRESHOLD: float = Field(
+        default=0.75,
+        description="Confidence threshold below which predictions are logged when ENABLE_REVIEW_LOGGING=True",
+    )
+    REVIEW_LOG_PATH: str = Field(
+        default="data/review/review_log.jsonl",
+        description="JSONL output path for production review logging",
+    )
+
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / ".env"),
         extra="ignore",

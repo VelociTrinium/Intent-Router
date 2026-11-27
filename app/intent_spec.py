@@ -6,6 +6,7 @@ training, evaluation, and serving.
 
 import json
 import math
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -21,17 +22,42 @@ ROUTE_TO_TOKEN: Dict[str, str] = {
 TOKEN_TO_ROUTE: Dict[str, str] = {tok: route for route, tok in ROUTE_TO_TOKEN.items()}
 
 OLLAMA_CLASSIFIER_SYSTEM_PROMPT = (
-    "Classify the user's latest prompt into exactly one token: CHAT, READ, WRITE, or ASK.\n"
-    "CHAT: greetings, conceptual/SQL syntax help, architecture questions, announcements, or drafting text without saving to DB.\n"
-    "READ: clear, specific requests to fetch, search, filter, count, aggregate, or inspect live, deleted, or audit DB records.\n"
-    "WRITE: clear, complete requests to create, update, log, schedule, mutate non-destructively, or mixed read+write with explicit targets/values.\n"
-    "ASK: vague/underspecified prompts, missing target entity or new value, unresolved pronouns without context, ambiguous read-vs-write intent, or destructive/bulk deletes/drops/purges needing confirmation."
+    "Classify the user's latest prompt into one token: CHAT, READ, WRITE, or ASK.\n"
+    "CHAT: greetings, conceptual/SQL syntax/sample-query help, live-data meta-questions, "
+    "office notices, or drafting/summarizing without DB actions.\n"
+    "READ: clear fetch/search/filter/count/aggregate/inspect queries, including "
+    "negative-write guards (\"don't update, just show...\").\n"
+    "WRITE: clear, non-destructive mutations with explicit targets/values (create, update, "
+    "log, schedule, mixed read+write, or complete inbound inquiries).\n"
+    "ASK: vague/underspecified prompts, missing target/value, unresolved pronouns, "
+    "read-vs-write ambiguity, or destructive/bulk deletes/drops/purges/overrides needing confirmation."
+)
+
+# Post-model safety net: only triggers when the model/threshold pipeline outputs DB_WRITE
+# for an unambiguous bulk/destructive mutation without a negative-write guard.
+_DESTRUCTIVE_BULK_WRITE_RE = re.compile(
+    r"\b("
+    r"delete\s+(?:all|every)\b|drop\s+(?:the\s+)?(?:\w+\s+){0,2}tables?\b|truncate\b"
+    r"|purge\s+(?:all|every|old|historical)\b|wipe\s+(?:all|out)\b"
+    r"|bulk[\s-]+(?:delete|remove|archive|update)|mass[\s-]+(?:delete|update|reassign|archive)"
+    r"|override\s+(?:every|all)\b|overwrite\s+(?:every|all)\b"
+    r"|reset\s+(?:every|all)\b|erase\s+(?:every|all)\b"
+    r"|reassign\s+every\b|change\s+every\b"
+    r"|update\s+(?:all|every)\b.+\bto\s+(?:zero|0|null|terminated|closed|draft|deleted)\b"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_NEGATIVE_WRITE_GUARD_RE = re.compile(
+    r"\b(?:don't|do\s+not|without|instead\s+of|hold\s+off\s+on|never|before\s+(?:deleting|purging|archiving)"
+    r"|what\s+(?:is|does|are)\b|how\s+(?:do\s+i|does|to)\b|explain\b|sample\s+(?:sql\s+)?(?:query|script)|example\s+(?:sql\s+)?(?:query|script))\b",
+    re.IGNORECASE,
 )
 
 
 def normalize_chat_history(
     chat_history: Optional[List[Dict[str, Any]]],
-    max_turns: int = 4,
+    max_turns: int = 6,
 ) -> List[Dict[str, str]]:
     """Keeps the most recent `max_turns` valid user/assistant turns with non-empty content."""
     if not chat_history:
@@ -52,7 +78,7 @@ def build_ollama_messages(
     chat_history: Optional[List[Dict[str, Any]]] = None,
     include_system: bool = False,
     system_prompt: str = OLLAMA_CLASSIFIER_SYSTEM_PROMPT,
-    max_turns: int = 4,
+    max_turns: int = 6,
 ) -> List[Dict[str, str]]:
     """Builds Ollama `/api/chat` messages list with optional short history."""
     messages: List[Dict[str, str]] = []
@@ -104,12 +130,20 @@ def extract_ollama_token_probabilities(response_json: Dict[str, Any]) -> Optiona
     return None
 
 
+def is_destructive_bulk_write(prompt: Optional[str]) -> bool:
+    """Returns True if prompt clearly expresses an unguarded bulk or destructive DB mutation."""
+    if not prompt:
+        return False
+    return bool(_DESTRUCTIVE_BULK_WRITE_RE.search(prompt) and not _NEGATIVE_WRITE_GUARD_RE.search(prompt))
+
+
 def apply_routing_guardrails(
     probabilities: Dict[str, float],
     confidence_threshold: float = 0.60,
     write_threshold: float = 0.40,
     clarify_threshold: float = 0.40,
     fallback_route: str = "CLARIFICATION_REQUIRED",
+    prompt: Optional[str] = None,
 ) -> Tuple[str, str, float, bool]:
     """
     Applies 4-class threshold guardrails and returns
@@ -123,6 +157,8 @@ def apply_routing_guardrails(
        so mixed READ+WRITE or actionable mutations are not dropped.
     3. Confidence Fallback: else if max(P) < confidence_threshold, route to fallback_route.
     4. Primary Prediction: else route to raw argmax class.
+    5. Post-Model Destructive Write Guard: if final_route is DB_WRITE and prompt matches
+       an unguarded bulk/destructive mutation, intercept to CLARIFICATION_REQUIRED.
     """
     raw_prediction = max(
         ((c, probabilities.get(c, 0.0)) for c in CLASSES),
@@ -148,6 +184,11 @@ def apply_routing_guardrails(
         final_route = raw_prediction
         final_confidence = raw_confidence
         fallback_triggered = False
+
+    if final_route == "DB_WRITE" and is_destructive_bulk_write(prompt):
+        final_route = "CLARIFICATION_REQUIRED"
+        final_confidence = probabilities.get("CLARIFICATION_REQUIRED", raw_confidence)
+        fallback_triggered = True
 
     return final_route, raw_prediction, final_confidence, fallback_triggered
 

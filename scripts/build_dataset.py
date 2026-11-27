@@ -243,6 +243,12 @@ def build_splits(
     random.shuffle(val_split)
     random.shuffle(test_split)
 
+    train_texts = {r["text"].strip().lower() for r in train_split}
+    val_texts = {r["text"].strip().lower() for r in val_split}
+    test_texts = {r["text"].strip().lower() for r in test_split}
+    cross_test_overlap = len(train_texts & test_texts)
+    cross_val_overlap = len(train_texts & val_texts)
+
     stats = {
         "unique_total": len(merged_by_key),
         "custom_unique": sum(1 for r in merged_by_key.values() if r.get("_is_custom")),
@@ -250,6 +256,8 @@ def build_splits(
         "train_count": len(train_split),
         "val_count": len(val_split),
         "test_count": len(test_split),
+        "cross_split_text_overlap_test": cross_test_overlap,
+        "cross_split_text_overlap_val": cross_val_overlap,
     }
     return train_split, val_split, test_split, stats
 
@@ -268,6 +276,7 @@ def main():
     parser.add_argument("--include-seeds", action="store_true", help="Include data/seed_prompts.json when data/raw/synthetic_prompts.json is absent")
     parser.add_argument("--regenerate-synthetic", action="store_true", help="Re-run generate_data.py via Gemini before merging")
     parser.add_argument("--target-total", type=int, default=1080, help="Target synthetic size if --regenerate-synthetic is set (default: 1080 across 4 classes)")
+    parser.add_argument("--multi-turn-ratio", type=float, default=0.35, help="Multi-turn ratio forwarded to generate_data.py when regenerating")
     parser.add_argument("--custom-train-repeat", type=int, default=1, help="Optional upsample factor for custom rows inside train.jsonl only")
     parser.add_argument("--train-ratio", type=float, default=0.75)
     parser.add_argument("--val-ratio", type=float, default=0.10)
@@ -281,6 +290,8 @@ def main():
             str(SCRIPTS_DIR / "generate_data.py"),
             "--target-total",
             str(args.target_total),
+            "--multi-turn-ratio",
+            str(args.multi_turn_ratio),
         ]
         print(f"[INFO] Regenerating synthetic data: {' '.join(gen_cmd)}")
         subprocess.run(gen_cmd, check=True)

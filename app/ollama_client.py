@@ -20,6 +20,7 @@ Usage:
 
 import json
 import math
+import re
 import time
 import urllib.request
 from typing import Any, Dict, List, Optional
@@ -31,6 +32,23 @@ TOKEN_TO_ROUTE = {
     "WRITE": "DB_WRITE",
     "ASK": "CLARIFICATION_REQUIRED",
 }
+_DESTRUCTIVE_BULK_WRITE_RE = re.compile(
+    r"\b("
+    r"delete\s+(?:all|every)\b|drop\s+(?:the\s+)?(?:\w+\s+){0,2}tables?\b|truncate\b"
+    r"|purge\s+(?:all|every|old|historical)\b|wipe\s+(?:all|out)\b"
+    r"|bulk[\s-]+(?:delete|remove|archive|update)|mass[\s-]+(?:delete|update|reassign|archive)"
+    r"|override\s+(?:every|all)\b|overwrite\s+(?:every|all)\b"
+    r"|reset\s+(?:every|all)\b|erase\s+(?:every|all)\b"
+    r"|reassign\s+every\b|change\s+every\b"
+    r"|update\s+(?:all|every)\b.+\bto\s+(?:zero|0|null|terminated|closed|draft|deleted)\b"
+    r")\b",
+    re.IGNORECASE,
+)
+_NEGATIVE_WRITE_GUARD_RE = re.compile(
+    r"\b(?:don't|do\s+not|without|instead\s+of|hold\s+off\s+on|never|before\s+(?:deleting|purging|archiving)"
+    r"|what\s+(?:is|does|are)\b|how\s+(?:do\s+i|does|to)\b|explain\b|sample\s+(?:sql\s+)?(?:query|script)|example\s+(?:sql\s+)?(?:query|script))\b",
+    re.IGNORECASE,
+)
 
 
 def classify_intent(
@@ -44,7 +62,7 @@ def classify_intent(
     confidence_threshold: float = 0.60,
     fallback_route: str = "CLARIFICATION_REQUIRED",
     timeout_sec: float = 15.0,
-    max_history_turns: int = 4,
+    max_history_turns: int = 6,
     keep_alive: str = "10m",
 ) -> Dict[str, Any]:
     """
@@ -141,6 +159,15 @@ def classify_intent(
         final_route = raw_prediction
         final_confidence = raw_confidence
         fallback_triggered = False
+
+    if (
+        final_route == "DB_WRITE"
+        and _DESTRUCTIVE_BULK_WRITE_RE.search(prompt)
+        and not _NEGATIVE_WRITE_GUARD_RE.search(prompt)
+    ):
+        final_route = "CLARIFICATION_REQUIRED"
+        final_confidence = probabilities.get("CLARIFICATION_REQUIRED", raw_confidence)
+        fallback_triggered = True
 
     elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
     return {

@@ -142,6 +142,7 @@ class RouterEngine:
             write_threshold=settings.WRITE_THRESHOLD,
             clarify_threshold=settings.CLARIFY_THRESHOLD,
             fallback_route=settings.FALLBACK_ROUTE,
+            prompt=prompt,
         )
 
         elapsed_ms = (time.perf_counter() - t0) * 1000.0

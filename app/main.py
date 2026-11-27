@@ -4,14 +4,22 @@ FastAPI service exposing production endpoints for 4-class Intent Router:
 - POST /route: Fast intent routing endpoint with safety guardrails & probabilities
 """
 
+import json
+import logging
+import threading
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
+from app.config import BASE_DIR, settings
 from app.schemas import RouteRequest, RouteResponse, HealthResponse, VALID_ROUTES
 from app.router_engine import RouterEngine
+
+logger = logging.getLogger("intent_router")
+_REVIEW_LOG_LOCK = threading.Lock()
 
 # Global router engine instance
 engine: Optional[RouterEngine] = None
@@ -86,12 +94,49 @@ def route_prompt(request: RouteRequest):
             prompt=cleaned_prompt,
             chat_history=request.chat_history
         )
+
+        # Log low-confidence or fallback-triggered predictions when enabled
+        if settings.ENABLE_REVIEW_LOGGING and (
+            response.confidence < settings.REVIEW_CONFIDENCE_THRESHOLD or response.fallback_triggered
+        ):
+            _log_for_review(cleaned_prompt, request.chat_history, response)
+
         return response
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Intent routing failed: {str(e)}"
         )
+
+
+def _log_for_review(
+    prompt: str,
+    chat_history: Optional[list],
+    response: RouteResponse,
+) -> None:
+    """Appends low-confidence or fallback predictions to REVIEW_LOG_PATH for human review."""
+    try:
+        log_path = Path(settings.REVIEW_LOG_PATH)
+        if not log_path.is_absolute():
+            log_path = BASE_DIR / log_path
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "prompt": prompt,
+            "chat_history": chat_history or [],
+            "route": response.route,
+            "raw_prediction": response.raw_prediction,
+            "confidence": response.confidence,
+            "probabilities": response.probabilities,
+            "fallback_triggered": response.fallback_triggered,
+            "backend": response.backend,
+        }
+        line = json.dumps(entry, ensure_ascii=False) + "\n"
+        with _REVIEW_LOG_LOCK:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(line)
+    except Exception as e:
+        logger.warning(f"Failed to log review entry: {e}")
 
 
 if __name__ == "__main__":
