@@ -127,7 +127,7 @@ python scripts/retrain_pipeline.py --custom-only --dry-run
 python scripts/retrain_pipeline.py --include-seeds --base-model models/hf_base/Qwen2.5-0.5B-Instruct --epochs 2 --batch-size 8 --grad-accum 2 --lr 3e-4 --lora-r 16 --outtype q8_0 --model-name intent-router-qwen2.5-0.5b-instruct --version v1
 
 # Best-quality run with Gemini synthetic + multi-turn expansion (~1,080 samples)
-python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 1080 --custom-train-repeat 2 --base-model models/hf_base/Qwen2.5-0.5B-Instruct --epochs 3 --batch-size 4 --grad-accum 2 --lr 2e-4 --lora-r 16 --outtype f16 --model-name intent-router-qwen2.5-0.5b-instruct --version v2
+python scripts/retrain_pipeline.py --regenerate-synthetic --target-total 2000 --multi-turn-ratio 0.25 --custom-train-repeat 2 --base-model models/hf_base/Qwen2.5-0.5B-Instruct --epochs 4 --batch-size 8 --grad-accum 2 --lr 2e-4 --lora-r 24 --outtype f16 --model-name intent-router-qwen2.5-0.5b-instruct --version v3
 
 # Retrain strictly on data/custom/ as new version v2
 python scripts/retrain_pipeline.py --custom-only --custom-train-repeat 2 --model-name intent-router-qwen2.5-0.5b-instruct --version v2
