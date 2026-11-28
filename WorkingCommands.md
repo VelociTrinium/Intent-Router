@@ -151,6 +151,7 @@ python scripts/evaluate.py --ollama-model intent-router-qwen2.5-0.5b-instruct:v2
 # Benchmark v2 head-to-head against v1 or untuned base qwen2.5:0.5b
 python scripts/evaluate.py --ollama-model intent-router-qwen2.5-0.5b-instruct:v2 --compare-untuned-ollama intent-router-qwen2.5-0.5b-instruct:v1
 python scripts/evaluate.py --ollama-model intent-router-qwen2.5-0.5b-instruct:v1 --compare-untuned-ollama qwen2.5:0.5b
+python scripts/evaluate.py --ollama-model intent-router-qwen2.5-0.5b-instruct:v3 --compare-untuned-ollama intent-router-qwen2.5-0.5b-instruct:v2 --output-report models/v3_vs_v2_report.json --fail-on-regression
 
 # Write report to custom path
 python scripts/evaluate.py --ollama-model intent-router-qwen2.5-0.5b-instruct:v2 --output-report models/evaluation_report_v2.json
