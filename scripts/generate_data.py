@@ -131,6 +131,7 @@ CLASS_SINGLE_THEMES: Dict[str, List[str]] = {
         "ReConnect platform how-to questions (field meanings, workflows, lead vs pursuit conversions) without DB queries",
         "commercial real estate domain concepts (cap rate, WALE, Grade A/B, NNN lease, FSI) and internal office notices/circulate announcements",
         "SQL syntax questions, sample/example SQL scripts without execution, and drafting emails/agendas/narrative performance summaries without CRM DB actions",
+        "everyday non-CRM general knowledge, Excel/coding/math questions, casual polite messages, and typo-tolerant conversational prompts without DB actions",
     ],
     "DB_READ": [
         "clear company, contact, and account-manager lookup queries across APAC/EMEA/US",

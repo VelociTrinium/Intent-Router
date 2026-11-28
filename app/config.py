@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     API_PORT: int = Field(default=8000)
     DEBUG: bool = Field(default=False)
 
+    # Optional in-memory LRU cache for repeated normalized (chat_history, prompt) calls
+    ROUTE_CACHE_SIZE: int = Field(
+        default=512,
+        description="Max cached probability results in RouterEngine (0 disables caching)",
+    )
+
     # Optional review logging for low-confidence / fallback predictions
     ENABLE_REVIEW_LOGGING: bool = Field(
         default=False,

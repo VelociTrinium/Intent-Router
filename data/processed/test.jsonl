@@ -1,298 +1,300 @@
-{"text": "What are their respective floor numbers and square footages?", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Show me vacant office floors in the financial district."}, {"role": "assistant", "content": "There are 15 vacant office floors currently available in the financial district."}]}
-{"text": "show contacts in singapore", "label": "DB_READ"}
-{"text": "Retrieve the current tenant record for Unit 802 at One Midtown Atlanta and update the lease expiry date to 2028-11-30.", "label": "DB_WRITE"}
-{"text": "list inactive accounts from last year", "label": "DB_READ"}
-{"text": "Mass overwrite all regional broker IDs to null for the Q3 audit", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Update the closing date.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Search for deals worth over $10M."}, {"role": "assistant", "content": "Found deal #1024 and deal #1089."}]}
-{"text": "Reset all open pursuit stages to Draft", "label": "CLARIFICATION_REQUIRED"}
-{"text": "List properties where the alias name differs from the registered property name.", "label": "DB_READ"}
-{"text": "show me flex industrial assets in austin texas", "label": "DB_READ"}
-{"text": "log an email sent to claudia wagner at siemens munich detailing revised floor plans for level 12 at main tower", "label": "DB_WRITE"}
-{"text": "Which lead generation source brings in the highest total deal value?", "label": "DB_READ"}
-{"text": "Edit the note.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Show me recent notes for Nike."}, {"role": "assistant", "content": "Note 1 added by Alex, Note 2 added by Priya."}]}
-{"text": "Is this property in the database or should I create it?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Update the HSBC Central Hong Kong lead to change the service required to Tenant Representation and estimated value to HKD 18,000,000.", "label": "DB_WRITE"}
-{"text": "Can you check if there are any duplicate company records for 'Deloitte' in the EMEA database?", "label": "DB_READ"}
-{"text": "Change the availability status of unit 802 in Express Towers to Under Contract.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Change the status for the commercial unit."}, {"role": "assistant", "content": "Which unit and property are you modifying, and what should the new status be?"}]}
-{"text": "how does the pipeline work in reconnect", "label": "GENERAL_CHAT"}
-{"text": "how do i write a recursive cte in sql", "label": "GENERAL_CHAT"}
-{"text": "Register property Apex Tower at 120 Orchard Road, Singapore as a Grade A commercial building with 450,000 sq ft net rentable area.", "label": "DB_WRITE"}
-{"text": "Subject: PMC Requirement in Pune. From: Jiten Shah (jiten@kswbuilders.com), KSW Builders. We require Project Management Consulting services for an upcoming 850,000 sq ft commercial IT park in Hinjewadi, Pune. Let's connect next Monday.", "label": "DB_WRITE"}
-{"text": "Update account #1092 to read Apex Global Real Estate Corp.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Change the client company name."}, {"role": "assistant", "content": "Which company account ID are we editing, and what is the corrected legal name?"}]}
-{"text": "Please note that the Bengaluru tech hub reception desk will be relocated to the 4th floor starting Monday.", "label": "GENERAL_CHAT"}
-{"text": "Show all pursuits for JPMorgan along with their current stage and lead broker.", "label": "DB_READ"}
-{"text": "Wait what does WALE mean in that context?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Can you check the current status of pursuit #9842 in our database?"}, {"role": "assistant", "content": "Pursuit #9842 (Project Meridian) is currently in the negotiation stage with a deal value of $4.5M."}]}
 {"text": "draft an intro email to a new tenant", "label": "GENERAL_CHAT"}
-{"text": "Erase all notes on pursuit #7724", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Move it to next week", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Good afternoon, I'm Rachel Sterling from Sterling Pharmaceuticals UK. We need valuation advisory for 6 logistics warehouses across Manchester and Birmingham. Email: rachel.sterling@sterlingpharma.co.uk, tel: +44 20 7946 0555.", "label": "DB_WRITE"}
-{"text": "Edit that record", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Internal memo: All brokers must complete their annual compliance training modules by the end of next week.", "label": "GENERAL_CHAT"}
-{"text": "At Express Towers, Nariman Point, this coming Thursday at 2 PM.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Schedule a client site visit."}, {"role": "assistant", "content": "To set up the calendar event, what is the property location and what time is the visit scheduled?"}]}
-{"text": "Internal memo: New security badges must be collected from the lobby reception by Friday afternoon.", "label": "GENERAL_CHAT"}
-{"text": "Can you compute the average WALE for industrial assets in the Western region?", "label": "DB_READ"}
-{"text": "what time is it in london right now", "label": "GENERAL_CHAT"}
-{"text": "tell me what you can help me with", "label": "GENERAL_CHAT"}
-{"text": "Update portfolio manager details", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Unit 304 in Signature Tower reported AC cooling failure.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Record a tenant complaint ticket."}, {"role": "assistant", "content": "What is the unit number and a brief summary of the maintenance issue reported?"}]}
-{"text": "update linkedin profile url for sara ahmed at emirates ndeavors to linkedin.com/in/sara-ahmed-cre", "label": "DB_WRITE"}
-{"text": "get all companies with no assigned broker", "label": "DB_READ"}
-{"text": "Show me all unassigned corporate accounts in the Dublin office that have had zero activity recorded in the past 90 days.", "label": "DB_READ"}
-{"text": "show me land parcels zoned for multi-family residential in phoenix", "label": "DB_READ"}
-{"text": "Can you explain what audit logs track inside ReConnect regarding user data modifications?", "label": "GENERAL_CHAT"}
-{"text": "Show me only the email interactions from that history.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Pull up the activity history for account #9921."}, {"role": "assistant", "content": "Account #9921 has 34 logged activities over the past 12 months."}]}
-{"text": "How does ReConnect manage task assignments and automated reminders for deal pipelines?", "label": "GENERAL_CHAT"}
-{"text": "what is the currency code for united arab dirhams", "label": "GENERAL_CHAT"}
-{"text": "Explain what a Joint Venture (JV) land development structure involves.", "label": "GENERAL_CHAT"}
-{"text": "Update lead #3312 description to reflect an increased requirement of 45,000 sq ft in BKC instead of 30,000 sq ft.", "label": "DB_WRITE"}
-{"text": "RFP Notice: RetailPlus Asia is seeking a partner for comprehensive Facilities Management across 24 retail stores in Singapore and Malaysia starting March. Contact: Marcus Tan, Head of Operations, marcus.tan@retailplus.sg, +65 9445 6612.", "label": "DB_WRITE"}
-{"text": "Pull the audit log history for pursuit #9921 to see who altered the target closing date.", "label": "DB_READ"}
-{"text": "Please create a new account for Meridian Capital Partners, headquartered in London, and assign it to broker Sarah Chen.", "label": "DB_WRITE"}
-{"text": "only pull records - what are the top 3 largest active deals in our singapore portfolio right now", "label": "DB_READ"}
-{"text": "Which contacts have both a mobile number and a secondary email recorded?", "label": "DB_READ"}
-{"text": "show me all pending lease renewals expiring within the next 90 days in boston", "label": "DB_READ"}
-{"text": "Which hotel properties in frankfurt have more than 250 rooms?", "label": "DB_READ"}
-{"text": "how's the weather in downtown new york today", "label": "GENERAL_CHAT"}
-{"text": "Change valuation", "label": "CLARIFICATION_REQUIRED"}
-{"text": "add a note to amazon", "label": "DB_WRITE"}
-{"text": "Count how many active enterprise leads we have in Tokyo right now", "label": "DB_READ"}
-{"text": "Express Towers Singapore lease review — search existing or create new entry?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Update the broker commission rate", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Show all contacts who do not have a mobile phone number on file.", "label": "DB_READ"}
-{"text": "Find HSBC's active Central Hong Kong pursuit, log today's meeting with Sarah Wong stating they shortlisted Two Pacific Place, and set a follow-up for next Tuesday.", "label": "DB_WRITE"}
-{"text": "Inspect recent changes logged for pursuit #8436.", "label": "DB_READ"}
-{"text": "List all projects developed by DLF or Lodha Group in the database.", "label": "DB_READ"}
-{"text": "Show all activities scheduled for tomorrow across my accounts.", "label": "DB_READ"}
-{"text": "Schedule an onboarding workshop with new associate brokers on Monday at 9 AM in the main boardroom.", "label": "DB_WRITE"}
-{"text": "can mira access my emails", "label": "GENERAL_CHAT"}
-{"text": "find cfo at shell amsterdam and set status to active prospect", "label": "DB_WRITE"}
-{"text": "Query those pursuits first to verify what will be affected.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Purge the closed pursuits from 2021."}, {"role": "assistant", "content": "Purging is a permanent action. Should we query those pursuits first to verify what will be affected?"}]}
-{"text": "Remove company", "label": "CLARIFICATION_REQUIRED"}
-{"text": "log a lunch meeting with senior director of operations at nike portland regarding logistics expansion strategy in oregon", "label": "DB_WRITE"}
-{"text": "What is a capitalization rate (cap rate) and how is it calculated in CRE?", "label": "GENERAL_CHAT"}
-{"text": "Sort those properties by total square footage ascending.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "List all industrial properties in Dallas with a cap rate above 7%."}, {"role": "assistant", "content": "Found 8 industrial properties in Dallas meeting that cap rate threshold."}]}
-{"text": "explain database transactions", "label": "GENERAL_CHAT"}
-{"text": "what is query execution plan", "label": "GENERAL_CHAT"}
-{"text": "HSBC meeting tomorrow 3 PM — check schedule or book new?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "What is the aggregate deal value of pursuits currently in the negotiation stage for the Singapore tech team?", "label": "DB_READ"}
-{"text": "update mobile phone for contact vikram malhotra at reliance industries to +91 98111 22334", "label": "DB_WRITE"}
-{"text": "can you help me brainstorm catchy team names for our commercial leasing department", "label": "GENERAL_CHAT"}
-{"text": "what is tenant improvement allowance", "label": "GENERAL_CHAT"}
-{"text": "Which companies in Singapore have no contacts linked to them?", "label": "DB_READ"}
-{"text": "inbound lead: katherine wong kwong@apexglobal.hk req 18000 sq ft central hk office", "label": "DB_WRITE"}
-{"text": "Can you write an example SQL query using a CASE statement to segment pursuits by deal size categories?", "label": "GENERAL_CHAT"}
-{"text": "Create a new company record for InMobi with headquarters in Bangalore and tag sector as AdTech.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Can you check if there's an active company profile for 'InMobi'?"}, {"role": "assistant", "content": "InMobi is not currently found in the corporate accounts database, though there are pending leads."}]}
-{"text": "Sort that ticket list by highest priority level first.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Fetch the recent support tickets logged for the London office."}, {"role": "assistant", "content": "There are 5 open support tickets for the London office ranging from HVAC issues to badge access."}]}
-{"text": "Help me draft a concise bulleted status update for the investment committee packet without saving or logging anything in ReConnect yet.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Pull up the details for the Pacific Heights office acquisition pursuit."}, {"role": "assistant", "content": "The Pacific Heights acquisition pursuit is currently valued at $18 million with investment committee review scheduled for Friday."}, {"role": "user", "content": "Which partner is leading the underwriting for this property?"}, {"role": "assistant", "content": "Partner Elena Rostova is leading the financial underwriting and due diligence."}]}
-{"text": "see ya", "label": "GENERAL_CHAT"}
-{"text": "add company Vertex Capital in Singapore, fintech sector, website vertexcap.sg, assign to broker ID 702", "label": "DB_WRITE"}
-{"text": "Create company Vertex Bio in Frankfurt, Germany, add contact Sabine Becker (sabine.becker@vertexbio.de, +49 69 1234 5678), and register 22,000 sq ft lab space in Eschborn.", "label": "DB_WRITE"}
-{"text": "How should our brokers document verbal counter-offers from landlords?", "label": "GENERAL_CHAT"}
-{"text": "Extend the lease term.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "List active leases for Oracle."}, {"role": "assistant", "content": "Oracle HQ Lease and Oracle R&D Center Lease."}]}
-{"text": "Assign Neha Kapoor as co-broker on pursuit #8834.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Do we have a record for a consultant named Neha Kapoor?"}, {"role": "assistant", "content": "Yes, Neha Kapoor is registered as an independent corporate broker associated with our Mumbai central node."}]}
-{"text": "I received an enquiry from Anna Schmidt at EuroTech GmbH. Create the company and Anna's contact (anna.schmidt@eurotech.de).", "label": "DB_WRITE"}
-{"text": "Please truncate the commercial lease transactions table right away.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Set the parent company for Apex Digital Solutions to Apex Holdings Global.", "label": "DB_WRITE"}
-{"text": "Can you help me polish a pitch deck introduction focusing on our firm's tech-enabled portfolio management capabilities?", "label": "GENERAL_CHAT"}
-{"text": "Show all companies headquartered in Germany or the United Kingdom.", "label": "DB_READ"}
-{"text": "Archive all of them.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Show me properties in sector 5."}, {"role": "assistant", "content": "Sector 5 contains Tower Alpha and Tower Beta."}]}
-{"text": "Log the meeting outcome", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Query or modify?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Can you generate five professional subject lines for an office market report email?", "label": "GENERAL_CHAT"}
-{"text": "draft a quick recap of our H1 leasing activity", "label": "GENERAL_CHAT"}
-{"text": "We received an enquiry via our website today. Please add company 'Blue Horizon Energy', contact 'Nora Lindqvist' (nora.lindqvist@bluehorizon.se), and create a lead for 19,000 sq ft in Stockholm.", "label": "DB_WRITE"}
-{"text": "Terminate them.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "List contracts expiring next month."}, {"role": "assistant", "content": "Contract #701 and Contract #702."}]}
-{"text": "Can u pull the account mgr for HSBC in HK pls", "label": "DB_READ"}
-{"text": "Please create a new pursuit for Amazon's 50,000 sq ft requirement in Bengaluru with deal value USD 3,500,000.", "label": "DB_WRITE"}
-{"text": "Extend the lease expiration date for Wework at Enam House to March 31, 2028 in the CRM.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "What are the key details on the lease expiration for Wework in Enam House?"}, {"role": "assistant", "content": "The current lease agreement for Wework at Enam House expires on March 31, 2025."}]}
-{"text": "Show me logistics parks in Rotterdam larger than 120,000 sq ft and managed by the Netherlands commercial team.", "label": "DB_READ"}
-{"text": "explain core vs value add real estate investing", "label": "GENERAL_CHAT"}
-{"text": "Revise the forecast fee on the Reliance deal", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Don't update or create anything — just show me the current pursuit stages for all HSBC deals.", "label": "DB_READ"}
-{"text": "How is carpet area calculated differently from rentable area here?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Can you pull the leasing history for Suite 400?"}, {"role": "assistant", "content": "Suite 400 was last leased by Vanguard Inc. from 2019 to 2024 at a starting rate of $45/sq ft."}]}
-{"text": "Override all pursuit deal values in India to INR 0", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Retrieve pursuit #5589 for Unilever London and update the expected close date to November 15, 2024.", "label": "DB_WRITE"}
-{"text": "Can you write a short introductory message for a prospective corporate tenant inquiring about 15,000 sq ft in Singapore?", "label": "GENERAL_CHAT"}
-{"text": "Modify the lease expiration date for that tenant.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Can you explain how database locking works during concurrent write transactions?", "label": "GENERAL_CHAT"}
-{"text": "thanks for your help mira", "label": "GENERAL_CHAT"}
-{"text": "How many pursuits moved from Pitch to Mandate in the last 60 days?", "label": "DB_READ"}
-{"text": "Good morning, I am Claire from Horizon Funds. Can you pull the historical lease transaction prices in Central Hong Kong for 2022 vs 2024?", "label": "DB_READ"}
-{"text": "Convert it now", "label": "CLARIFICATION_REQUIRED"}
-{"text": "explain database schema normalization", "label": "GENERAL_CHAT"}
-{"text": "Update the broker field", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Draft an email to the property management team requesting extra HVAC hours for an evening client walkthrough.", "label": "GENERAL_CHAT"}
-{"text": "change pursuit 8893 stage from proposal submitted to verbal agreement and update fee expectation to usd 180,000", "label": "DB_WRITE"}
-{"text": "what is dbt in data engineering", "label": "GENERAL_CHAT"}
-{"text": "Update the budget on the Mumbai requirement", "label": "CLARIFICATION_REQUIRED"}
-{"text": "show me average deal size broken down by asset type in the US market", "label": "DB_READ"}
-{"text": "Can you draft a professional email to a client explaining why we recommend waiting for the Q4 market report before launching their leasing campaign?", "label": "GENERAL_CHAT"}
-{"text": "Draft a reassuring client satisfaction check-in message for David to send, without modifying or logging anything in the database.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Retrieve the account profile for Nexus Innovations."}, {"role": "assistant", "content": "Nexus Innovations is a tier-1 technology client with headquarters in Austin, Texas, managed by broker David Kim."}, {"role": "user", "content": "Are there any pending service requests associated with their account?"}, {"role": "assistant", "content": "Yes, they submitted a request for additional parking allocations last Tuesday."}]}
-{"text": "display all multi-family residential complexes in austin having more than 150 units and occupancy rate under 85%", "label": "DB_READ"}
-{"text": "how does this app work", "label": "GENERAL_CHAT"}
-{"text": "show all emails logged against Deloitte", "label": "DB_READ"}
-{"text": "Don't delete all records — just show me how many inactive leads exist from 2024.", "label": "DB_READ"}
-{"text": "update company name", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Can you updte client #4432?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Who is managing the account for Deutsche Bank in Frankfurt?", "label": "DB_READ"}
-{"text": "show deleted contacts log", "label": "DB_READ"}
-{"text": "do not modify or overwrite anything, just fetch the current address and tax ID for skyline towers in downtown chicago", "label": "DB_READ"}
-{"text": "What are the asking rental rates per square foot for those Nevada properties?", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Find all industrial warehouse listings in the Western region."}, {"role": "assistant", "content": "Found 31 industrial warehouse listings in the Western region."}, {"role": "user", "content": "Narrow that down to only the ones located in Nevada."}, {"role": "assistant", "content": "There are 7 industrial warehouses located in Nevada."}]}
-{"text": "Assign account Brookfield to broker user ID 2241.", "label": "DB_WRITE"}
-{"text": "Dear Broker Team, NovaCloud Systems is expanding to Dallas and requires 35,000 sq ft fitted office space near Uptown by October. Contact Derek Vance at derek.vance@novacloud.io or +1 469 555 0133 to arrange a briefing call tomorrow.", "label": "DB_WRITE"}
-{"text": "Find or create the asset profile for the Tokyo office.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "is this pulling from a real database?", "label": "GENERAL_CHAT"}
-{"text": "how do I view execution plans in pgadmin", "label": "GENERAL_CHAT"}
-{"text": "Link them together", "label": "CLARIFICATION_REQUIRED"}
-{"text": "What are the key differences between gross lease and net lease structures?", "label": "GENERAL_CHAT"}
-{"text": "How many of them were created in the last 7 days?", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Show me open leads originating from our LinkedIn campaigns."}, {"role": "assistant", "content": "Found 67 open leads attributed to LinkedIn campaigns."}]}
-{"text": "Assign the new broker account", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Can you drop the staging leads table?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Wipe out yesterday logs", "label": "CLARIFICATION_REQUIRED"}
-{"text": "get all accounts", "label": "DB_READ"}
-{"text": "Record today's discussion with Daniel Lee from Horizon Capital and remind me to follow up with him next Monday.", "label": "DB_WRITE"}
-{"text": "Write a professional response to a landlord declining a counter-offer due to pricing limits.", "label": "GENERAL_CHAT"}
-{"text": "Log new lead from client email: Danielle Bouchard from Montreal Media (dbouchard@montrealmedia.ca) is requesting a 16,000 sq ft creative loft space in Old Montreal.", "label": "DB_WRITE"}
-{"text": "set parking ratio for property building 4 at business bay dubai to 1 per 500 sq ft", "label": "DB_WRITE"}
-{"text": "List all companies in China.", "label": "DB_READ"}
-{"text": "How do I optimize large CSV imports into the ReConnect database without locking tables?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Check data export status for Q3 report"}, {"role": "assistant", "content": "Q3 export is complete."}]}
-{"text": "What does FAR (Floor Area Ratio) mean in urban planning?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Pull up zoning restrictions for parcel B"}, {"role": "assistant", "content": "Parcel B is zoned for mixed-use commercial and residential."}]}
-{"text": "How does ReConnect handle field level validation rules for custom property attributes?", "label": "GENERAL_CHAT"}
-{"text": "Delete the duplicate lead for contact vijay.sharma@tcs.com.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "appreciate it", "label": "GENERAL_CHAT"}
-{"text": "Provide the individual stage history and last updated timestamp for each pursuit.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Can you check the database for any pending pursuits associated with Microsoft?"}, {"role": "assistant", "content": "Microsoft currently has 3 pending pursuits in the CRM pipeline."}]}
-{"text": "Draft an email thanking the property management team for hosting our client event.", "label": "GENERAL_CHAT"}
-{"text": "For Rachel Torres at Barclays, note that she prefers communication via WhatsApp.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Add a note to the contact record."}, {"role": "assistant", "content": "Which contact are you referring to, and what note text should I append?"}]}
-{"text": "Who is the client lead for Scentre Group Sydney?", "label": "DB_READ"}
-{"text": "Delete them.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Find tasks due this week."}, {"role": "assistant", "content": "Task 12 for Acme and Task 15 for Globex."}]}
-{"text": "Show all properties in Dallas, Texas with their street addresses and property types.", "label": "DB_READ"}
-{"text": "Find relationship manager for Godrej Properties Mumbai", "label": "DB_READ"}
-{"text": "Hello, I'm Karen Lee from Titan Capital. We need 30,000 sq ft office in Raffles Place, Singapore. karen.lee@titancap.sg, +65 9234 5678.", "label": "DB_WRITE"}
-{"text": "What does 'Key Lead' indicate in the ReConnect lead management module?", "label": "GENERAL_CHAT"}
-{"text": "Mass override all pending lease statuses across the entire New York portfolio.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "What is the status of the lease agreement for 200 Park Avenue?"}, {"role": "assistant", "content": "The lease agreement for 200 Park Avenue is currently pending legal review."}]}
-{"text": "Can you fetch or update the rent roll for level 12?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Find properties in Raffles Place or Marina Bay, Singapore with gross area over 200,000 sq ft.", "label": "DB_READ"}
-{"text": "Add this company please.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Cancel and delete every single inspection record from the CRM", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Are there any pending property inspections for the downtown Chicago portfolio?"}, {"role": "assistant", "content": "Yes, there are 5 inspections scheduled across the Loop and West Loop office buildings for this week."}]}
-{"text": "Show all closed transactions (ZS_Re_TransactionInfo) recorded in Mumbai during Q3.", "label": "DB_READ"}
-{"text": "Find all leads in Mumbai with an estimated lead value over INR 50,000,000.", "label": "DB_READ"}
-{"text": "whats a foreign key", "label": "GENERAL_CHAT"}
-{"text": "What is the recommended procedure for archiving inactive broker profiles in the CRM system?", "label": "GENERAL_CHAT"}
-{"text": "Delete the entire commercial lease ledger for the London portfolio immediately.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "can you write a sample SQL query to find duplicates by email", "label": "GENERAL_CHAT"}
-{"text": "What happens to historical activities when a contact moves to a new employer?", "label": "GENERAL_CHAT"}
-{"text": "delete that lead", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Log an email exchange sent today to andreas.schmidt@siemens.com concerning industrial warehouse leasing terms in Munich.", "label": "DB_WRITE"}
-{"text": "how to filter null values in postgresql without breaking indexes", "label": "GENERAL_CHAT"}
-{"text": "Update the mobile number for contact ID 3821", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Write a brief executive summary paragraph highlighting this retail pipeline status for my weekly team update memo, without updating any database records.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Show me the pipeline summary for our retail leasing division."}, {"role": "assistant", "content": "The retail leasing division currently has 14 active pursuits totaling $1.2 million in projected annual commission."}, {"role": "user", "content": "Which deal is currently in the late-stage negotiation phase?"}, {"role": "assistant", "content": "The highest value late-stage deal is the Metro Plaza storefront expansion with Urban Threads, valued at $320,000."}]}
-{"text": "find contact at nike portland and log today's meeting about warehouse expansion", "label": "DB_WRITE"}
-{"text": "create company record for Blue Ridge Logistics, Seattle USA, supply chain industry, primary contact is mark zeller", "label": "DB_WRITE"}
-{"text": "register building: One Indiabulls Centre Tower 2B, Elphinstone Road Mumbai, 22000 sq ft office space, owner Indiabulls Real Estate", "label": "DB_WRITE"}
-{"text": "Record a technical walkthrough at Technopark Trivandrum with engineering leads from Oracle India.", "label": "DB_WRITE"}
-{"text": "what is anchor tenant in retail real estate", "label": "GENERAL_CHAT"}
-{"text": "Search for pursuit #3301 associated with Schneider Electric and update the probability to 75 percent.", "label": "DB_WRITE"}
-{"text": "Schedule a site visit with Priya Nair from Infosys at RMZ Ecoworld, Bengaluru for this Friday at 11:30 AM.", "label": "DB_WRITE"}
-{"text": "Which suburban office parks in denver have floor plates larger than 30000 sq ft?", "label": "DB_READ"}
-{"text": "Merge all duplicate companies automatically", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Add prospect from incoming contact form: Mateo Rossi (m.rossi@milanorealty.it) is looking to lease 20,000 sq ft of retail space in Milan Fashion District.", "label": "DB_WRITE"}
-{"text": "Can you purge the staging audit trail?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Purge all records from the staging table", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Save John Lim", "label": "CLARIFICATION_REQUIRED"}
-{"text": "CapitaLand Singapore", "label": "CLARIFICATION_REQUIRED"}
-{"text": "add property 10 boulevard haussmann paris 85000 sq ft prime office", "label": "DB_WRITE"}
-{"text": "How does the parent-subsidiary company hierarchy work in our CRM schema?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Search company records for JPMorgan"}, {"role": "assistant", "content": "Found JPMorgan Chase with 45 linked contacts."}]}
-{"text": "schedule a follow up with cbre for thursday", "label": "DB_WRITE"}
-{"text": "Add a new tenant entry for Godrej BKC named Stripe India occupying 8,400 sq ft on floor 12.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Pull up the tenant list for Godrej BKC."}, {"role": "assistant", "content": "Current tenants include Twitter, Rabobank, and Mitsubishi UFJ Financial Group."}]}
-{"text": "Update Kevin's phone number", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Pull the account details for Siemens Munich and update their primary billing contact to Dr. Hans Weber (hans.weber@siemens.de).", "label": "DB_WRITE"}
-{"text": "Update pursuit #9012 to associate property 'One International Center' and set stage to Negotiation.", "label": "DB_WRITE"}
-{"text": "add contact david chen to tencent shenzhen office, title senior director, email d.chen@tencent.cn, mobile +86 755 8601 3388", "label": "DB_WRITE"}
-{"text": "find account id for boeing seattle and log a call about lease renewal", "label": "DB_WRITE"}
-{"text": "What is net absorption and how do brokers calculate it for office submarkets?", "label": "GENERAL_CHAT"}
-{"text": "Draft a polite email declining an invitation to speak at the upcoming property tech conference.", "label": "GENERAL_CHAT"}
-{"text": "Which office buildings in central sydney have vacant floors exceeding 20000 sq ft?", "label": "DB_READ"}
-{"text": "display all closed deals associated with broker sarah jenkins during Q2", "label": "DB_READ"}
-{"text": "Can you compose a thoughtful tenant retention email template for Marcus, without saving or changing anything in ReConnect?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Who is the primary contact listed for Apex Logistics?"}, {"role": "assistant", "content": "The primary contact for Apex Logistics is Marcus Vance, VP of Real Estate."}, {"role": "user", "content": "Did we record any recent interactions with him?"}, {"role": "assistant", "content": "Yes, a discovery call was logged last Thursday discussing their upcoming warehouse lease renewal."}]}
-{"text": "Reassign the Abbott Laboratories inquiry to broker David Miller.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "What is the pipeline stage for the Abbott Laboratories inquiry?"}, {"role": "assistant", "content": "It is currently at the Initial Discussion stage."}, {"role": "user", "content": "Who is managing it internally?"}, {"role": "assistant", "content": "It is managed by senior associate Tanya Sen."}]}
-{"text": "Add Pinnacle BioSciences (trade name: Pinnacle Bio) in the Healthcare & Pharmaceuticals sector, based in the UK.", "label": "DB_WRITE"}
-{"text": "please archive leads with no activity from 2023", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Count how many contacts we have per company for the top 10 accounts.", "label": "DB_READ"}
-{"text": "Record the meeting minutes", "label": "CLARIFICATION_REQUIRED"}
-{"text": "run a read-only search for logistics warehouses greater than 100k sqft in madrid", "label": "DB_READ"}
-{"text": "Can you help me polish a executive summary for our Q3 Singapore commercial real estate investment portfolio?", "label": "GENERAL_CHAT"}
-{"text": "Draft a polite email to a landlord asking for a rent-free fit-out period extension.", "label": "GENERAL_CHAT"}
-{"text": "Remove Kevin Sauer from the database permanently", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Inbound inquiry from Sophie Laurent (sophie.laurent@luxebrands.fr), LuxeBrands Europe: Seeking 8,000 sq ft luxury retail flagship space in Bond Street, London. Would like to schedule an introductory video call on Friday at 2 PM GMT.", "label": "DB_WRITE"}
-{"text": "draft a reminder email for rent escalation notice", "label": "GENERAL_CHAT"}
-{"text": "Who is the assigned account manager for Derwent London?", "label": "DB_READ"}
-{"text": "Revise the commission split on deal #1102 to 60 percent for broker #441 and 40 percent for broker #552.", "label": "DB_WRITE"}
-{"text": "Change currency format for the account", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Find broker assigned to Brigade Group in Chennai", "label": "DB_READ"}
-{"text": "What qualifies someone as a Grade A broker internally?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Show me the top brokers in our London office."}, {"role": "assistant", "content": "The top brokers by closed volume in London this quarter are James Arthur, Claire Bennett, and Marcus Vance."}]}
-{"text": "show me all life sciences lab spaces in Cambridge MA priced above $80 psf", "label": "DB_READ"}
-{"text": "Compare the total deal volume generated by the Singapore office versus the Hong Kong office for the first half of 2024.", "label": "DB_READ"}
-{"text": "Draft a gentle reminder email template for tenants regarding the upcoming safety audit, without saving or logging anything in the database.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Pull up the lease compliance records for the City Center Retail Galleria."}, {"role": "assistant", "content": "Compliance records show all 22 retail tenants have submitted their annual insurance certificates."}, {"role": "user", "content": "When is the next scheduled compliance audit deadline?"}, {"role": "assistant", "content": "The next quarterly environmental and safety audit is scheduled for December 15th."}]}
-{"text": "strictly query only - give me the historical lease expiration schedule for all tenants in one global center", "label": "DB_READ"}
-{"text": "Log a site visit at One International Centre Tower 3 with Rajesh Kumar from Tata Group; they loved the 12th-floor sea view plate.", "label": "DB_WRITE"}
-{"text": "add task for broker mike to send comp analysis to accenture by tomorrow noon", "label": "DB_WRITE"}
 {"text": "Truncate the valuation log database for Australia assets", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Can you locate the historical valuation logs for our retail assets in Melbourne?"}, {"role": "assistant", "content": "I have retrieved 6 historical valuation logs for Melbourne retail assets ranging from 2021 to 2024."}]}
-{"text": "Show top 5 clients by estimated annual fee pipeline.", "label": "DB_READ"}
-{"text": "Show deleted tenant records from the staging database schema", "label": "DB_READ"}
-{"text": "Add secondary email kevin.sauer@outlook.com to Kevin Sauer's contact record at Microsoft.", "label": "DB_WRITE"}
-{"text": "Truncate the client interaction logs for compliance.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "what is a CTE in sql", "label": "GENERAL_CHAT"}
-{"text": "Assign this lead to a broker", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Do that thing", "label": "CLARIFICATION_REQUIRED"}
-{"text": "whats gross absorption vs net absorption", "label": "GENERAL_CHAT"}
-{"text": "circulate this notice: office kitchen will be renovated next week", "label": "GENERAL_CHAT"}
-{"text": "Modify the primary contact without providing the new name or email", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Yes, fetch all rows currently stored in that staging table so I can verify the contents.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Can you drop the staging table for the Q3 leasing survey?"}, {"role": "assistant", "content": "Dropping a table is permanent and cannot be undone. Do you want a report of its contents before dropping?"}]}
-{"text": "What does DROP TABLE do in PostgreSQL?", "label": "GENERAL_CHAT"}
-{"text": "Can u clean up my CRM contacts?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Can you write an example SQL query to find duplicate email addresses in a contacts table?", "label": "GENERAL_CHAT"}
-{"text": "what is a broker in this context", "label": "GENERAL_CHAT"}
-{"text": "hey quick thing", "label": "GENERAL_CHAT"}
-{"text": "Write a sample follow-up email after sending over a shortlist of three Grade A office towers.", "label": "GENERAL_CHAT"}
-{"text": "pull contact details for the chief financial officer at apex holdings", "label": "DB_READ"}
-{"text": "Modify the square footage on property record ID 4409 to 54,000 sq ft and update the asset classification to Grade A.", "label": "DB_WRITE"}
-{"text": "Revise the asking rent for unit 305 in Trade World to INR 310 per sq ft.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Update the asking rent for the office space."}, {"role": "assistant", "content": "Please specify the property, unit number, and the new asking rent figure."}]}
-{"text": "Log a note against Deloitte saying proposal submitted on 15 Nov.", "label": "DB_WRITE"}
-{"text": "Edit the meeting notes.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Show me meeting logs for the last two weeks with TechCorp"}, {"role": "assistant", "content": "There are two logged meetings: Oct 12 regarding software integration and Oct 19 regarding office leasing."}]}
-{"text": "Update Unit 1204 at Skyline Tower in Dallas to reflect unit usage as Office and net area 14,200 sq ft.", "label": "DB_WRITE"}
-{"text": "log lunch meeting with cfo of nestle vevey re swiss headquarters expansion", "label": "DB_WRITE"}
-{"text": "Mass update every contact title in London to Associate", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Wipe out the old contacts", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Notice: All expense reimbursements for Q3 client travel must be submitted in the finance portal by Friday evening.", "label": "GENERAL_CHAT"}
-{"text": "show me all companies added this month", "label": "DB_READ"}
-{"text": "One BKC Mumbai or Express Towers — should I pull reports or add a new tenant?", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Add commercial property Two Pacific Place at 88 Queensway, Admiralty, Hong Kong, developed by Swire Properties.", "label": "DB_WRITE"}
-{"text": "write a brief profile of what reconnect does", "label": "GENERAL_CHAT"}
+{"text": "Update portfolio manager details", "label": "CLARIFICATION_REQUIRED"}
 {"text": "list all properties managed by broker ID 8492 with occupancy under 70%", "label": "DB_READ"}
-{"text": "Please wipe out every client contact associated with the Tokyo branch.", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Show me only the stage change entries from that log.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Pull up the audit logs for pursuit #7724."}, {"role": "assistant", "content": "Audit log for pursuit #7724 shows 12 entries since creation on Jan 10, 2024."}]}
-{"text": "Update Sarah Wong's job title at HSBC to Managing Director, Corporate Real Estate.", "label": "DB_WRITE"}
-{"text": "List all companies assigned to more than one account manager.", "label": "DB_READ"}
-{"text": "What does Grade A office classification typically require regarding HVAC and parking ratios?", "label": "GENERAL_CHAT"}
-{"text": "Can you draft a quick summary of the Q3 leasing performance for the Singapore branch without saving it anywhere?", "label": "GENERAL_CHAT"}
-{"text": "List all contacts at Prestige Group in Bangalore", "label": "DB_READ"}
-{"text": "schedule a follow-up task for broker priya sharma to call head of facilities at vodafone london next tuesday at 10 am regarding 40,000 sq ft requirement", "label": "DB_WRITE"}
-{"text": "Permanently wipe out all meeting notes linked to pursuit #3301", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Show me the floor plans and parking ratios for the third one.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Show me the top 5 largest office spaces in One BKC Mumbai."}, {"role": "assistant", "content": "Here are the top 5 largest office spaces in One BKC Mumbai, ranging from 25,000 to 80,000 sq ft."}, {"role": "user", "content": "What are the asking rents for each of those?"}, {"role": "assistant", "content": "Asking rents range from INR 280 to INR 350 per sq ft per month across those 5 spaces."}]}
-{"text": "How many companies are registered per country across APAC?", "label": "DB_READ"}
-{"text": "Verify the record", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Retrieve the current rates for Tier 2 brokers first.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Overwrite the default commission rates for Tier 2 brokers."}, {"role": "assistant", "content": "Overwriting commission rates impacts payroll calculations. Shall I retrieve the current rates for Tier 2 brokers first?"}]}
-{"text": "Find all contacts at JLL Singapore", "label": "DB_READ"}
-{"text": "What is the standard split percentage for junior versus senior brokers?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Retrieve broker commission records"}, {"role": "assistant", "content": "Commission records retrieved for Q2."}]}
-{"text": "change industry category for account #1142 from retail to financial services", "label": "DB_WRITE"}
-{"text": "Move pursuit #9942 to Closed Won.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Change the status for the corporate tower deal."}, {"role": "assistant", "content": "Could you please specify which pursuit ID or exact property name you mean, and what stage to move it to?"}]}
-{"text": "pull dell brisbane contact and set status to disqualified", "label": "DB_WRITE"}
-{"text": "Create property unit 1402 at One Midtown, Hong Kong, 12,500 sq ft, Grade A office, and link it to company Vistra Group.", "label": "DB_WRITE"}
-{"text": "delete this account", "label": "CLARIFICATION_REQUIRED"}
-{"text": "Truncate the history table.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Find properties in downtown Chicago."}, {"role": "assistant", "content": "Willis Tower and Wrigley Building."}]}
-{"text": "can you remove this duplicate contact?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "update linkedin profile url for sara ahmed at emirates ndeavors to linkedin.com/in/sara-ahmed-cre", "label": "DB_WRITE"}
+{"text": "What qualifies someone as a Grade A broker internally?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Show me the top brokers in our London office."}, {"role": "assistant", "content": "The top brokers by closed volume in London this quarter are James Arthur, Claire Bennett, and Marcus Vance."}]}
+{"text": "Show me logistics parks in Rotterdam larger than 120,000 sq ft and managed by the Netherlands commercial team.", "label": "DB_READ"}
+{"text": "update company name", "label": "CLARIFICATION_REQUIRED"}
 {"text": "Check database history or save new update for the HSBC account?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Truncate the history table.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Find properties in downtown Chicago."}, {"role": "assistant", "content": "Willis Tower and Wrigley Building."}]}
+{"text": "What does 'Key Lead' indicate in the ReConnect lead management module?", "label": "GENERAL_CHAT"}
+{"text": "log an email sent to claudia wagner at siemens munich detailing revised floor plans for level 12 at main tower", "label": "DB_WRITE"}
+{"text": "Retrieve the current rates for Tier 2 brokers first.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Overwrite the default commission rates for Tier 2 brokers."}, {"role": "assistant", "content": "Overwriting commission rates impacts payroll calculations. Shall I retrieve the current rates for Tier 2 brokers first?"}]}
+{"text": "Express Towers Singapore lease review — search existing or create new entry?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Notice: All expense reimbursements for Q3 client travel must be submitted in the finance portal by Friday evening.", "label": "GENERAL_CHAT"}
+{"text": "Update lead #3312 description to reflect an increased requirement of 45,000 sq ft in BKC instead of 30,000 sq ft.", "label": "DB_WRITE"}
+{"text": "Can you drop the staging leads table?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "what time is it in london right now", "label": "GENERAL_CHAT"}
+{"text": "hey quick thing", "label": "GENERAL_CHAT"}
+{"text": "change pursuit 8893 stage from proposal submitted to verbal agreement and update fee expectation to usd 180,000", "label": "DB_WRITE"}
+{"text": "Can you draft a professional email to a client explaining why we recommend waiting for the Q4 market report before launching their leasing campaign?", "label": "GENERAL_CHAT"}
+{"text": "List all projects developed by DLF or Lodha Group in the database.", "label": "DB_READ"}
+{"text": "thanks for your help mira", "label": "GENERAL_CHAT"}
+{"text": "Update the broker field", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Internal memo: New security badges must be collected from the lobby reception by Friday afternoon.", "label": "GENERAL_CHAT"}
+{"text": "Show deleted tenant records from the staging database schema", "label": "DB_READ"}
+{"text": "display all multi-family residential complexes in austin having more than 150 units and occupancy rate under 85%", "label": "DB_READ"}
+{"text": "Update Sarah Wong's job title at HSBC to Managing Director, Corporate Real Estate.", "label": "DB_WRITE"}
+{"text": "Record a technical walkthrough at Technopark Trivandrum with engineering leads from Oracle India.", "label": "DB_WRITE"}
+{"text": "What is the aggregate deal value of pursuits currently in the negotiation stage for the Singapore tech team?", "label": "DB_READ"}
+{"text": "What is the recommended procedure for archiving inactive broker profiles in the CRM system?", "label": "GENERAL_CHAT"}
+{"text": "can you remove this duplicate contact?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "show contacts in singapore", "label": "DB_READ"}
+{"text": "how to filter null values in postgresql without breaking indexes", "label": "GENERAL_CHAT"}
+{"text": "create company record for Blue Ridge Logistics, Seattle USA, supply chain industry, primary contact is mark zeller", "label": "DB_WRITE"}
+{"text": "Retrieve the current tenant record for Unit 802 at One Midtown Atlanta and update the lease expiry date to 2028-11-30.", "label": "DB_WRITE"}
+{"text": "Draft a polite email declining an invitation to speak at the upcoming property tech conference.", "label": "GENERAL_CHAT"}
+{"text": "Sort those properties by total square footage ascending.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "List all industrial properties in Dallas with a cap rate above 7%."}, {"role": "assistant", "content": "Found 8 industrial properties in Dallas meeting that cap rate threshold."}]}
+{"text": "Don't update or create anything — just show me the current pursuit stages for all HSBC deals.", "label": "DB_READ"}
+{"text": "show me all pending lease renewals expiring within the next 90 days in boston", "label": "DB_READ"}
+{"text": "Show me all unassigned corporate accounts in the Dublin office that have had zero activity recorded in the past 90 days.", "label": "DB_READ"}
+{"text": "change industry category for account #1142 from retail to financial services", "label": "DB_WRITE"}
+{"text": "add company Vertex Capital in Singapore, fintech sector, website vertexcap.sg, assign to broker ID 702", "label": "DB_WRITE"}
+{"text": "Pull the audit log history for pursuit #9921 to see who altered the target closing date.", "label": "DB_READ"}
+{"text": "Remove company", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Mass update every contact title in London to Associate", "label": "CLARIFICATION_REQUIRED"}
+{"text": "how does the pipeline work in reconnect", "label": "GENERAL_CHAT"}
+{"text": "Update the broker commission rate", "label": "CLARIFICATION_REQUIRED"}
+{"text": "see ya", "label": "GENERAL_CHAT"}
+{"text": "Edit the note.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Show me recent notes for Nike."}, {"role": "assistant", "content": "Note 1 added by Alex, Note 2 added by Priya."}]}
+{"text": "What happens to historical activities when a contact moves to a new employer?", "label": "GENERAL_CHAT"}
+{"text": "What does DROP TABLE do in PostgreSQL?", "label": "GENERAL_CHAT"}
+{"text": "Record today's discussion with Daniel Lee from Horizon Capital and remind me to follow up with him next Monday.", "label": "DB_WRITE"}
+{"text": "please archive leads with no activity from 2023", "label": "CLARIFICATION_REQUIRED"}
+{"text": "delete that lead", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Change the availability status of unit 802 in Express Towers to Under Contract.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Change the status for the commercial unit."}, {"role": "assistant", "content": "Which unit and property are you modifying, and what should the new status be?"}]}
+{"text": "Update Unit 1204 at Skyline Tower in Dallas to reflect unit usage as Office and net area 14,200 sq ft.", "label": "DB_WRITE"}
+{"text": "show all emails logged against Deloitte", "label": "DB_READ"}
+{"text": "Delete the entire commercial lease ledger for the London portfolio immediately.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "How many of them were created in the last 7 days?", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Show me open leads originating from our LinkedIn campaigns."}, {"role": "assistant", "content": "Found 67 open leads attributed to LinkedIn campaigns."}]}
+{"text": "show me flex industrial assets in austin texas", "label": "DB_READ"}
+{"text": "Compare the total deal volume generated by the Singapore office versus the Hong Kong office for the first half of 2024.", "label": "DB_READ"}
+{"text": "log lunch meeting with cfo of nestle vevey re swiss headquarters expansion", "label": "DB_WRITE"}
+{"text": "Save John Lim", "label": "CLARIFICATION_REQUIRED"}
+{"text": "what is dbt in data engineering", "label": "GENERAL_CHAT"}
+{"text": "Override all pursuit deal values in India to INR 0", "label": "CLARIFICATION_REQUIRED"}
+{"text": "I received an enquiry from Anna Schmidt at EuroTech GmbH. Create the company and Anna's contact (anna.schmidt@eurotech.de).", "label": "DB_WRITE"}
+{"text": "add contact david chen to tencent shenzhen office, title senior director, email d.chen@tencent.cn, mobile +86 755 8601 3388", "label": "DB_WRITE"}
+{"text": "log a lunch meeting with senior director of operations at nike portland regarding logistics expansion strategy in oregon", "label": "DB_WRITE"}
 {"text": "What is the average deal value across closed-won transactions segmented by service line?", "label": "DB_READ"}
-{"text": "Explain what SQL injection is and how parameterized queries prevent it.", "label": "GENERAL_CHAT"}
+{"text": "Assign account Brookfield to broker user ID 2241.", "label": "DB_WRITE"}
+{"text": "Assign this lead to a broker", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Log new lead from client email: Danielle Bouchard from Montreal Media (dbouchard@montrealmedia.ca) is requesting a 16,000 sq ft creative loft space in Old Montreal.", "label": "DB_WRITE"}
+{"text": "Draft a reassuring client satisfaction check-in message for David to send, without modifying or logging anything in the database.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Retrieve the account profile for Nexus Innovations."}, {"role": "assistant", "content": "Nexus Innovations is a tier-1 technology client with headquarters in Austin, Texas, managed by broker David Kim."}, {"role": "user", "content": "Are there any pending service requests associated with their account?"}, {"role": "assistant", "content": "Yes, they submitted a request for additional parking allocations last Tuesday."}]}
+{"text": "Provide the individual stage history and last updated timestamp for each pursuit.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Can you check the database for any pending pursuits associated with Microsoft?"}, {"role": "assistant", "content": "Microsoft currently has 3 pending pursuits in the CRM pipeline."}]}
+{"text": "set parking ratio for property building 4 at business bay dubai to 1 per 500 sq ft", "label": "DB_WRITE"}
+{"text": "Log an email exchange sent today to andreas.schmidt@siemens.com concerning industrial warehouse leasing terms in Munich.", "label": "DB_WRITE"}
+{"text": "Draft an email to the property management team requesting extra HVAC hours for an evening client walkthrough.", "label": "GENERAL_CHAT"}
+{"text": "add property 10 boulevard haussmann paris 85000 sq ft prime office", "label": "DB_WRITE"}
+{"text": "Can you write an example SQL query to find duplicate email addresses in a contacts table?", "label": "GENERAL_CHAT"}
+{"text": "Update pursuit #9012 to associate property 'One International Center' and set stage to Negotiation.", "label": "DB_WRITE"}
+{"text": "RFP Notice: RetailPlus Asia is seeking a partner for comprehensive Facilities Management across 24 retail stores in Singapore and Malaysia starting March. Contact: Marcus Tan, Head of Operations, marcus.tan@retailplus.sg, +65 9445 6612.", "label": "DB_WRITE"}
+{"text": "Write a sample follow-up email after sending over a shortlist of three Grade A office towers.", "label": "GENERAL_CHAT"}
+{"text": "Update the HSBC Central Hong Kong lead to change the service required to Tenant Representation and estimated value to HKD 18,000,000.", "label": "DB_WRITE"}
+{"text": "pull dell brisbane contact and set status to disqualified", "label": "DB_WRITE"}
+{"text": "Merge all duplicate companies automatically", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Find properties in Raffles Place or Marina Bay, Singapore with gross area over 200,000 sq ft.", "label": "DB_READ"}
+{"text": "Update Kevin's phone number", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Remove Kevin Sauer from the database permanently", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Query or modify?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Can you explain what audit logs track inside ReConnect regarding user data modifications?", "label": "GENERAL_CHAT"}
+{"text": "schedule a follow up with cbre for thursday", "label": "DB_WRITE"}
+{"text": "whats gross absorption vs net absorption", "label": "GENERAL_CHAT"}
+{"text": "pull contact details for the chief financial officer at apex holdings", "label": "DB_READ"}
+{"text": "find contact at nike portland and log today's meeting about warehouse expansion", "label": "DB_WRITE"}
+{"text": "Find relationship manager for Godrej Properties Mumbai", "label": "DB_READ"}
+{"text": "Can u clean up my CRM contacts?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Show me the floor plans and parking ratios for the third one.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Show me the top 5 largest office spaces in One BKC Mumbai."}, {"role": "assistant", "content": "Here are the top 5 largest office spaces in One BKC Mumbai, ranging from 25,000 to 80,000 sq ft."}, {"role": "user", "content": "What are the asking rents for each of those?"}, {"role": "assistant", "content": "Asking rents range from INR 280 to INR 350 per sq ft per month across those 5 spaces."}]}
+{"text": "Show me only the stage change entries from that log.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Pull up the audit logs for pursuit #7724."}, {"role": "assistant", "content": "Audit log for pursuit #7724 shows 12 entries since creation on Jan 10, 2024."}]}
+{"text": "Please note that the Bengaluru tech hub reception desk will be relocated to the 4th floor starting Monday.", "label": "GENERAL_CHAT"}
+{"text": "show me all life sciences lab spaces in Cambridge MA priced above $80 psf", "label": "DB_READ"}
+{"text": "write a brief profile of what reconnect does", "label": "GENERAL_CHAT"}
+{"text": "how do i write a recursive cte in sql", "label": "GENERAL_CHAT"}
+{"text": "Search for pursuit #3301 associated with Schneider Electric and update the probability to 75 percent.", "label": "DB_WRITE"}
+{"text": "Wait what does WALE mean in that context?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Can you check the current status of pursuit #9842 in our database?"}, {"role": "assistant", "content": "Pursuit #9842 (Project Meridian) is currently in the negotiation stage with a deal value of $4.5M."}]}
+{"text": "Create property unit 1402 at One Midtown, Hong Kong, 12,500 sq ft, Grade A office, and link it to company Vistra Group.", "label": "DB_WRITE"}
+{"text": "Cancel and delete every single inspection record from the CRM", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Are there any pending property inspections for the downtown Chicago portfolio?"}, {"role": "assistant", "content": "Yes, there are 5 inspections scheduled across the Loop and West Loop office buildings for this week."}]}
+{"text": "We received an enquiry via our website today. Please add company 'Blue Horizon Energy', contact 'Nora Lindqvist' (nora.lindqvist@bluehorizon.se), and create a lead for 19,000 sq ft in Stockholm.", "label": "DB_WRITE"}
+{"text": "schedule a follow-up task for broker priya sharma to call head of facilities at vodafone london next tuesday at 10 am regarding 40,000 sq ft requirement", "label": "DB_WRITE"}
+{"text": "Please create a new account for Meridian Capital Partners, headquartered in London, and assign it to broker Sarah Chen.", "label": "DB_WRITE"}
+{"text": "Add secondary email kevin.sauer@outlook.com to Kevin Sauer's contact record at Microsoft.", "label": "DB_WRITE"}
+{"text": "Yes, fetch all rows currently stored in that staging table so I can verify the contents.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Can you drop the staging table for the Q3 leasing survey?"}, {"role": "assistant", "content": "Dropping a table is permanent and cannot be undone. Do you want a report of its contents before dropping?"}]}
+{"text": "Dear Broker Team, NovaCloud Systems is expanding to Dallas and requires 35,000 sq ft fitted office space near Uptown by October. Contact Derek Vance at derek.vance@novacloud.io or +1 469 555 0133 to arrange a briefing call tomorrow.", "label": "DB_WRITE"}
+{"text": "get all companies with no assigned broker", "label": "DB_READ"}
+{"text": "Who is the client lead for Scentre Group Sydney?", "label": "DB_READ"}
+{"text": "Add commercial property Two Pacific Place at 88 Queensway, Admiralty, Hong Kong, developed by Swire Properties.", "label": "DB_WRITE"}
+{"text": "Show top 5 clients by estimated annual fee pipeline.", "label": "DB_READ"}
+{"text": "Draft a polite email to a landlord asking for a rent-free fit-out period extension.", "label": "GENERAL_CHAT"}
+{"text": "Count how many active enterprise leads we have in Tokyo right now", "label": "DB_READ"}
+{"text": "Set the parent company for Apex Digital Solutions to Apex Holdings Global.", "label": "DB_WRITE"}
+{"text": "Change valuation", "label": "CLARIFICATION_REQUIRED"}
+{"text": "At Express Towers, Nariman Point, this coming Thursday at 2 PM.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Schedule a client site visit."}, {"role": "assistant", "content": "To set up the calendar event, what is the property location and what time is the visit scheduled?"}]}
+{"text": "draft a reminder email for rent escalation notice", "label": "GENERAL_CHAT"}
+{"text": "What are the key differences between gross lease and net lease structures?", "label": "GENERAL_CHAT"}
+{"text": "Revise the commission split on deal #1102 to 60 percent for broker #441 and 40 percent for broker #552.", "label": "DB_WRITE"}
+{"text": "can you help me brainstorm catchy team names for our commercial leasing department", "label": "GENERAL_CHAT"}
+{"text": "explain database schema normalization", "label": "GENERAL_CHAT"}
+{"text": "Assign Neha Kapoor as co-broker on pursuit #8834.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Do we have a record for a consultant named Neha Kapoor?"}, {"role": "assistant", "content": "Yes, Neha Kapoor is registered as an independent corporate broker associated with our Mumbai central node."}]}
+{"text": "What is net absorption and how do brokers calculate it for office submarkets?", "label": "GENERAL_CHAT"}
+{"text": "list inactive accounts from last year", "label": "DB_READ"}
+{"text": "Convert it now", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Update account #1092 to read Apex Global Real Estate Corp.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Change the client company name."}, {"role": "assistant", "content": "Which company account ID are we editing, and what is the corrected legal name?"}]}
+{"text": "update mobile phone for contact vikram malhotra at reliance industries to +91 98111 22334", "label": "DB_WRITE"}
+{"text": "How do I optimize large CSV imports into the ReConnect database without locking tables?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Check data export status for Q3 report"}, {"role": "assistant", "content": "Q3 export is complete."}]}
+{"text": "Show all properties in Dallas, Texas with their street addresses and property types.", "label": "DB_READ"}
+{"text": "add a note to amazon", "label": "DB_WRITE"}
+{"text": "Revise the asking rent for unit 305 in Trade World to INR 310 per sq ft.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Update the asking rent for the office space."}, {"role": "assistant", "content": "Please specify the property, unit number, and the new asking rent figure."}]}
+{"text": "Who is managing the account for Deutsche Bank in Frankfurt?", "label": "DB_READ"}
+{"text": "Can you fetch or update the rent roll for level 12?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "How many companies are registered per country across APAC?", "label": "DB_READ"}
+{"text": "Can you purge the staging audit trail?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Delete the duplicate lead for contact vijay.sharma@tcs.com.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "How many pursuits moved from Pitch to Mandate in the last 60 days?", "label": "DB_READ"}
+{"text": "Subject: PMC Requirement in Pune. From: Jiten Shah (jiten@kswbuilders.com), KSW Builders. We require Project Management Consulting services for an upcoming 850,000 sq ft commercial IT park in Hinjewadi, Pune. Let's connect next Monday.", "label": "DB_WRITE"}
+{"text": "Which lead generation source brings in the highest total deal value?", "label": "DB_READ"}
+{"text": "Show all contacts who do not have a mobile phone number on file.", "label": "DB_READ"}
+{"text": "Pull the account details for Siemens Munich and update their primary billing contact to Dr. Hans Weber (hans.weber@siemens.de).", "label": "DB_WRITE"}
+{"text": "Find HSBC's active Central Hong Kong pursuit, log today's meeting with Sarah Wong stating they shortlisted Two Pacific Place, and set a follow-up for next Tuesday.", "label": "DB_WRITE"}
+{"text": "Change currency format for the account", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Delete them.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Find tasks due this week."}, {"role": "assistant", "content": "Task 12 for Acme and Task 15 for Globex."}]}
+{"text": "Update the budget on the Mumbai requirement", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Write a brief executive summary paragraph highlighting this retail pipeline status for my weekly team update memo, without updating any database records.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Show me the pipeline summary for our retail leasing division."}, {"role": "assistant", "content": "The retail leasing division currently has 14 active pursuits totaling $1.2 million in projected annual commission."}, {"role": "user", "content": "Which deal is currently in the late-stage negotiation phase?"}, {"role": "assistant", "content": "The highest value late-stage deal is the Metro Plaza storefront expansion with Urban Threads, valued at $320,000."}]}
+{"text": "tell me what you can help me with", "label": "GENERAL_CHAT"}
+{"text": "inbound lead: katherine wong kwong@apexglobal.hk req 18000 sq ft central hk office", "label": "DB_WRITE"}
+{"text": "What does Grade A office classification typically require regarding HVAC and parking ratios?", "label": "GENERAL_CHAT"}
+{"text": "Find all leads in Mumbai with an estimated lead value over INR 50,000,000.", "label": "DB_READ"}
+{"text": "Edit that record", "label": "CLARIFICATION_REQUIRED"}
+{"text": "How should our brokers document verbal counter-offers from landlords?", "label": "GENERAL_CHAT"}
+{"text": "Update the closing date.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Search for deals worth over $10M."}, {"role": "assistant", "content": "Found deal #1024 and deal #1089."}]}
+{"text": "get all accounts", "label": "DB_READ"}
+{"text": "how's the weather in downtown new york today", "label": "GENERAL_CHAT"}
+{"text": "explain core vs value add real estate investing", "label": "GENERAL_CHAT"}
+{"text": "what is query execution plan", "label": "GENERAL_CHAT"}
+{"text": "add task for broker mike to send comp analysis to accenture by tomorrow noon", "label": "DB_WRITE"}
+{"text": "Good morning, I am Claire from Horizon Funds. Can you pull the historical lease transaction prices in Central Hong Kong for 2022 vs 2024?", "label": "DB_READ"}
+{"text": "Which contacts have both a mobile number and a secondary email recorded?", "label": "DB_READ"}
+{"text": "explain database transactions", "label": "GENERAL_CHAT"}
+{"text": "what is anchor tenant in retail real estate", "label": "GENERAL_CHAT"}
+{"text": "How is carpet area calculated differently from rentable area here?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Can you pull the leasing history for Suite 400?"}, {"role": "assistant", "content": "Suite 400 was last leased by Vanguard Inc. from 2019 to 2024 at a starting rate of $45/sq ft."}]}
+{"text": "draft a quick recap of our H1 leasing activity", "label": "GENERAL_CHAT"}
+{"text": "Write a professional response to a landlord declining a counter-offer due to pricing limits.", "label": "GENERAL_CHAT"}
+{"text": "Create company Vertex Bio in Frankfurt, Germany, add contact Sabine Becker (sabine.becker@vertexbio.de, +49 69 1234 5678), and register 22,000 sq ft lab space in Eschborn.", "label": "DB_WRITE"}
+{"text": "whats a foreign key", "label": "GENERAL_CHAT"}
+{"text": "HSBC meeting tomorrow 3 PM — check schedule or book new?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "List properties where the alias name differs from the registered property name.", "label": "DB_READ"}
+{"text": "What are their respective floor numbers and square footages?", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Show me vacant office floors in the financial district."}, {"role": "assistant", "content": "There are 15 vacant office floors currently available in the financial district."}]}
+{"text": "Add Pinnacle BioSciences (trade name: Pinnacle Bio) in the Healthcare & Pharmaceuticals sector, based in the UK.", "label": "DB_WRITE"}
+{"text": "Which suburban office parks in denver have floor plates larger than 30000 sq ft?", "label": "DB_READ"}
+{"text": "how do I view execution plans in pgadmin", "label": "GENERAL_CHAT"}
+{"text": "Inbound inquiry from Sophie Laurent (sophie.laurent@luxebrands.fr), LuxeBrands Europe: Seeking 8,000 sq ft luxury retail flagship space in Bond Street, London. Would like to schedule an introductory video call on Friday at 2 PM GMT.", "label": "DB_WRITE"}
+{"text": "Extend the lease term.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "List active leases for Oracle."}, {"role": "assistant", "content": "Oracle HQ Lease and Oracle R&D Center Lease."}]}
+{"text": "What are the asking rental rates per square foot for those Nevada properties?", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Find all industrial warehouse listings in the Western region."}, {"role": "assistant", "content": "Found 31 industrial warehouse listings in the Western region."}, {"role": "user", "content": "Narrow that down to only the ones located in Nevada."}, {"role": "assistant", "content": "There are 7 industrial warehouses located in Nevada."}]}
+{"text": "Archive all of them.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Show me properties in sector 5."}, {"role": "assistant", "content": "Sector 5 contains Tower Alpha and Tower Beta."}]}
+{"text": "Reset all open pursuit stages to Draft", "label": "CLARIFICATION_REQUIRED"}
+{"text": "How does ReConnect handle field level validation rules for custom property attributes?", "label": "GENERAL_CHAT"}
+{"text": "can you write a sample SQL query to find duplicates by email", "label": "GENERAL_CHAT"}
+{"text": "can mira access my emails", "label": "GENERAL_CHAT"}
+{"text": "Extend the lease expiration date for Wework at Enam House to March 31, 2028 in the CRM.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "What are the key details on the lease expiration for Wework in Enam House?"}, {"role": "assistant", "content": "The current lease agreement for Wework at Enam House expires on March 31, 2025."}]}
+{"text": "Record the meeting minutes", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Can you generate five professional subject lines for an office market report email?", "label": "GENERAL_CHAT"}
+{"text": "What is the standard split percentage for junior versus senior brokers?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Retrieve broker commission records"}, {"role": "assistant", "content": "Commission records retrieved for Q2."}]}
+{"text": "Terminate them.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "List contracts expiring next month."}, {"role": "assistant", "content": "Contract #701 and Contract #702."}]}
+{"text": "only pull records - what are the top 3 largest active deals in our singapore portfolio right now", "label": "DB_READ"}
+{"text": "Truncate the client interaction logs for compliance.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Which office buildings in central sydney have vacant floors exceeding 20000 sq ft?", "label": "DB_READ"}
+{"text": "Reassign the Abbott Laboratories inquiry to broker David Miller.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "What is the pipeline stage for the Abbott Laboratories inquiry?"}, {"role": "assistant", "content": "It is currently at the Initial Discussion stage."}, {"role": "user", "content": "Who is managing it internally?"}, {"role": "assistant", "content": "It is managed by senior associate Tanya Sen."}]}
+{"text": "how does this app work", "label": "GENERAL_CHAT"}
 {"text": "Retrieve the property listing for 200 Park Avenue New York and update the asking rent to USD 85 per sq ft.", "label": "DB_WRITE"}
+{"text": "Move pursuit #9942 to Closed Won.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Change the status for the corporate tower deal."}, {"role": "assistant", "content": "Could you please specify which pursuit ID or exact property name you mean, and what stage to move it to?"}]}
+{"text": "Find or create the asset profile for the Tokyo office.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "what is a CTE in sql", "label": "GENERAL_CHAT"}
+{"text": "Find all contacts at JLL Singapore", "label": "DB_READ"}
+{"text": "Modify the lease expiration date for that tenant.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "show deleted contacts log", "label": "DB_READ"}
+{"text": "appreciate it", "label": "GENERAL_CHAT"}
+{"text": "Modify the primary contact without providing the new name or email", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Edit the meeting notes.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Show me meeting logs for the last two weeks with TechCorp"}, {"role": "assistant", "content": "There are two logged meetings: Oct 12 regarding software integration and Oct 19 regarding office leasing."}]}
+{"text": "run a read-only search for logistics warehouses greater than 100k sqft in madrid", "label": "DB_READ"}
+{"text": "Log a site visit at One International Centre Tower 3 with Rajesh Kumar from Tata Group; they loved the 12th-floor sea view plate.", "label": "DB_WRITE"}
+{"text": "Show all activities scheduled for tomorrow across my accounts.", "label": "DB_READ"}
+{"text": "CapitaLand Singapore", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Can you check if there are any duplicate company records for 'Deloitte' in the EMEA database?", "label": "DB_READ"}
+{"text": "Do that thing", "label": "CLARIFICATION_REQUIRED"}
+{"text": "List all contacts at Prestige Group in Bangalore", "label": "DB_READ"}
+{"text": "Draft a gentle reminder email template for tenants regarding the upcoming safety audit, without saving or logging anything in the database.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Pull up the lease compliance records for the City Center Retail Galleria."}, {"role": "assistant", "content": "Compliance records show all 22 retail tenants have submitted their annual insurance certificates."}, {"role": "user", "content": "When is the next scheduled compliance audit deadline?"}, {"role": "assistant", "content": "The next quarterly environmental and safety audit is scheduled for December 15th."}]}
+{"text": "How does ReConnect manage task assignments and automated reminders for deal pipelines?", "label": "GENERAL_CHAT"}
+{"text": "Please create a new pursuit for Amazon's 50,000 sq ft requirement in Bengaluru with deal value USD 3,500,000.", "label": "DB_WRITE"}
+{"text": "Add prospect from incoming contact form: Mateo Rossi (m.rossi@milanorealty.it) is looking to lease 20,000 sq ft of retail space in Milan Fashion District.", "label": "DB_WRITE"}
+{"text": "Can u pull the account mgr for HSBC in HK pls", "label": "DB_READ"}
+{"text": "Hello, I'm Karen Lee from Titan Capital. We need 30,000 sq ft office in Raffles Place, Singapore. karen.lee@titancap.sg, +65 9234 5678.", "label": "DB_WRITE"}
+{"text": "What is a capitalization rate (cap rate) and how is it calculated in CRE?", "label": "GENERAL_CHAT"}
+{"text": "Verify the record", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Wipe out the old contacts", "label": "CLARIFICATION_REQUIRED"}
+{"text": "List all companies assigned to more than one account manager.", "label": "DB_READ"}
+{"text": "Which hotel properties in frankfurt have more than 250 rooms?", "label": "DB_READ"}
+{"text": "Can you compute the average WALE for industrial assets in the Western region?", "label": "DB_READ"}
+{"text": "Can you help me polish a executive summary for our Q3 Singapore commercial real estate investment portfolio?", "label": "GENERAL_CHAT"}
+{"text": "Erase all notes on pursuit #7724", "label": "CLARIFICATION_REQUIRED"}
+{"text": "circulate this notice: office kitchen will be renovated next week", "label": "GENERAL_CHAT"}
+{"text": "Create a new company record for InMobi with headquarters in Bangalore and tag sector as AdTech.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Can you check if there's an active company profile for 'InMobi'?"}, {"role": "assistant", "content": "InMobi is not currently found in the corporate accounts database, though there are pending leads."}]}
+{"text": "Draft an email thanking the property management team for hosting our client event.", "label": "GENERAL_CHAT"}
+{"text": "Don't delete all records — just show me how many inactive leads exist from 2024.", "label": "DB_READ"}
+{"text": "is this pulling from a real database?", "label": "GENERAL_CHAT"}
+{"text": "Explain what a Joint Venture (JV) land development structure involves.", "label": "GENERAL_CHAT"}
+{"text": "Modify the square footage on property record ID 4409 to 54,000 sq ft and update the asset classification to Grade A.", "label": "DB_WRITE"}
+{"text": "Mass overwrite all regional broker IDs to null for the Q3 audit", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Can you write an example SQL query using a CASE statement to segment pursuits by deal size categories?", "label": "GENERAL_CHAT"}
+{"text": "Schedule an onboarding workshop with new associate brokers on Monday at 9 AM in the main boardroom.", "label": "DB_WRITE"}
+{"text": "register building: One Indiabulls Centre Tower 2B, Elphinstone Road Mumbai, 22000 sq ft office space, owner Indiabulls Real Estate", "label": "DB_WRITE"}
+{"text": "Show me only the email interactions from that history.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Pull up the activity history for account #9921."}, {"role": "assistant", "content": "Account #9921 has 34 logged activities over the past 12 months."}]}
+{"text": "Explain what SQL injection is and how parameterized queries prevent it.", "label": "GENERAL_CHAT"}
+{"text": "Move it to next week", "label": "CLARIFICATION_REQUIRED"}
+{"text": "find account id for boeing seattle and log a call about lease renewal", "label": "DB_WRITE"}
+{"text": "delete this account", "label": "CLARIFICATION_REQUIRED"}
+{"text": "How does the parent-subsidiary company hierarchy work in our CRM schema?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Search company records for JPMorgan"}, {"role": "assistant", "content": "Found JPMorgan Chase with 45 linked contacts."}]}
+{"text": "List all companies in China.", "label": "DB_READ"}
+{"text": "What does FAR (Floor Area Ratio) mean in urban planning?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Pull up zoning restrictions for parcel B"}, {"role": "assistant", "content": "Parcel B is zoned for mixed-use commercial and residential."}]}
+{"text": "Sort that ticket list by highest priority level first.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Fetch the recent support tickets logged for the London office."}, {"role": "assistant", "content": "There are 5 open support tickets for the London office ranging from HVAC issues to badge access."}]}
+{"text": "what is tenant improvement allowance", "label": "GENERAL_CHAT"}
+{"text": "what is the currency code for united arab dirhams", "label": "GENERAL_CHAT"}
+{"text": "Is this property in the database or should I create it?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "show me land parcels zoned for multi-family residential in phoenix", "label": "DB_READ"}
+{"text": "strictly query only - give me the historical lease expiration schedule for all tenants in one global center", "label": "DB_READ"}
+{"text": "Inspect recent changes logged for pursuit #8436.", "label": "DB_READ"}
+{"text": "Show all pursuits for JPMorgan along with their current stage and lead broker.", "label": "DB_READ"}
+{"text": "Log the meeting outcome", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Show all closed transactions (ZS_Re_TransactionInfo) recorded in Mumbai during Q3.", "label": "DB_READ"}
+{"text": "Update the mobile number for contact ID 3821", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Who is the assigned account manager for Derwent London?", "label": "DB_READ"}
+{"text": "For Rachel Torres at Barclays, note that she prefers communication via WhatsApp.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Add a note to the contact record."}, {"role": "assistant", "content": "Which contact are you referring to, and what note text should I append?"}]}
+{"text": "find cfo at shell amsterdam and set status to active prospect", "label": "DB_WRITE"}
+{"text": "Permanently wipe out all meeting notes linked to pursuit #3301", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Link them together", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Show all companies headquartered in Germany or the United Kingdom.", "label": "DB_READ"}
+{"text": "Purge all records from the staging table", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Register property Apex Tower at 120 Orchard Road, Singapore as a Grade A commercial building with 450,000 sq ft net rentable area.", "label": "DB_WRITE"}
+{"text": "display all closed deals associated with broker sarah jenkins during Q2", "label": "DB_READ"}
+{"text": "Count how many contacts we have per company for the top 10 accounts.", "label": "DB_READ"}
+{"text": "Internal memo: All brokers must complete their annual compliance training modules by the end of next week.", "label": "GENERAL_CHAT"}
+{"text": "Can you draft a quick summary of the Q3 leasing performance for the Singapore branch without saving it anywhere?", "label": "GENERAL_CHAT"}
+{"text": "Retrieve pursuit #5589 for Unilever London and update the expected close date to November 15, 2024.", "label": "DB_WRITE"}
+{"text": "what is a broker in this context", "label": "GENERAL_CHAT"}
+{"text": "show me average deal size broken down by asset type in the US market", "label": "DB_READ"}
+{"text": "how do you convert square meters to square feet?", "label": "GENERAL_CHAT"}
+{"text": "Mass override all pending lease statuses across the entire New York portfolio.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "What is the status of the lease agreement for 200 Park Avenue?"}, {"role": "assistant", "content": "The lease agreement for 200 Park Avenue is currently pending legal review."}]}
+{"text": "write a short Python function to format phone numbers", "label": "GENERAL_CHAT"}
+{"text": "Revise the forecast fee on the Reliance deal", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Which companies in Singapore have no contacts linked to them?", "label": "DB_READ"}
+{"text": "Help me draft a concise bulleted status update for the investment committee packet without saving or logging anything in ReConnect yet.", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Pull up the details for the Pacific Heights office acquisition pursuit."}, {"role": "assistant", "content": "The Pacific Heights acquisition pursuit is currently valued at $18 million with investment committee review scheduled for Friday."}, {"role": "user", "content": "Which partner is leading the underwriting for this property?"}, {"role": "assistant", "content": "Partner Elena Rostova is leading the financial underwriting and due diligence."}]}
+{"text": "Assign the new broker account", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Can you write a short introductory message for a prospective corporate tenant inquiring about 15,000 sq ft in Singapore?", "label": "GENERAL_CHAT"}
+{"text": "One BKC Mumbai or Express Towers — should I pull reports or add a new tenant?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Unit 304 in Signature Tower reported AC cooling failure.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Record a tenant complaint ticket."}, {"role": "assistant", "content": "What is the unit number and a brief summary of the maintenance issue reported?"}]}
+{"text": "Add this company please.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "show me all companies added this month", "label": "DB_READ"}
+{"text": "Please wipe out every client contact associated with the Tokyo branch.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "do not modify or overwrite anything, just fetch the current address and tax ID for skyline towers in downtown chicago", "label": "DB_READ"}
+{"text": "Add a new tenant entry for Godrej BKC named Stripe India occupying 8,400 sq ft on floor 12.", "label": "DB_WRITE", "chat_history": [{"role": "user", "content": "Pull up the tenant list for Godrej BKC."}, {"role": "assistant", "content": "Current tenants include Twitter, Rabobank, and Mitsubishi UFJ Financial Group."}]}
+{"text": "Can you compose a thoughtful tenant retention email template for Marcus, without saving or changing anything in ReConnect?", "label": "GENERAL_CHAT", "chat_history": [{"role": "user", "content": "Who is the primary contact listed for Apex Logistics?"}, {"role": "assistant", "content": "The primary contact for Apex Logistics is Marcus Vance, VP of Real Estate."}, {"role": "user", "content": "Did we record any recent interactions with him?"}, {"role": "assistant", "content": "Yes, a discovery call was logged last Thursday discussing their upcoming warehouse lease renewal."}]}
+{"text": "Please truncate the commercial lease transactions table right away.", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Log a note against Deloitte saying proposal submitted on 15 Nov.", "label": "DB_WRITE"}
+{"text": "Good afternoon, I'm Rachel Sterling from Sterling Pharmaceuticals UK. We need valuation advisory for 6 logistics warehouses across Manchester and Birmingham. Email: rachel.sterling@sterlingpharma.co.uk, tel: +44 20 7946 0555.", "label": "DB_WRITE"}
+{"text": "Can you help me polish a pitch deck introduction focusing on our firm's tech-enabled portfolio management capabilities?", "label": "GENERAL_CHAT"}
 {"text": "Drop that table.", "label": "CLARIFICATION_REQUIRED", "chat_history": [{"role": "user", "content": "Find records for the project code PRJ-992."}, {"role": "assistant", "content": "PRJ-992 appears in both the active leads table and the archived deals database."}]}
+{"text": "Find broker assigned to Brigade Group in Chennai", "label": "DB_READ"}
+{"text": "Can you explain how database locking works during concurrent write transactions?", "label": "GENERAL_CHAT"}
+{"text": "Can you updte client #4432?", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Schedule a site visit with Priya Nair from Infosys at RMZ Ecoworld, Bengaluru for this Friday at 11:30 AM.", "label": "DB_WRITE"}
+{"text": "Wipe out yesterday logs", "label": "CLARIFICATION_REQUIRED"}
+{"text": "Query those pursuits first to verify what will be affected.", "label": "DB_READ", "chat_history": [{"role": "user", "content": "Purge the closed pursuits from 2021."}, {"role": "assistant", "content": "Purging is a permanent action. Should we query those pursuits first to verify what will be affected?"}]}

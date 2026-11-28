@@ -10,8 +10,10 @@ Routes:
 - CLARIFICATION_REQUIRED: Vague, incomplete, pronoun-dependent, ambiguous, or destructive prompts needing clarification.
 """
 
+import threading
 import time
-from typing import Any, Dict, List, Optional
+from collections import OrderedDict
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
@@ -22,6 +24,7 @@ from app.intent_spec import (
     apply_routing_guardrails,
     build_ollama_messages,
     extract_ollama_token_probabilities,
+    normalize_chat_history,
 )
 from app.schemas import RouteName, RouteResponse
 
@@ -120,6 +123,7 @@ class RouterEngine:
         self,
         ollama_model_override: Optional[str] = None,
         router: Optional[Any] = None,
+        cache_size: Optional[int] = None,
     ):
         self.backend_name = "ollama"
         self.router = router or OllamaRouter(
@@ -127,6 +131,26 @@ class RouterEngine:
             model_name=ollama_model_override or settings.OLLAMA_MODEL,
             timeout_sec=settings.OLLAMA_TIMEOUT_SEC,
         )
+        # Enable LRU cache by default for live OllamaRouter; keep 0 when a mock router is injected unless set
+        if cache_size is None:
+            self.cache_size = settings.ROUTE_CACHE_SIZE if router is None else 0
+        else:
+            self.cache_size = max(0, int(cache_size))
+        self._cache: OrderedDict[Tuple[Any, ...], Dict[str, float]] = OrderedDict()
+        self._cache_lock = threading.Lock()
+
+    def clear_cache(self) -> None:
+        with self._cache_lock:
+            self._cache.clear()
+
+    def _make_cache_key(
+        self,
+        prompt: str,
+        chat_history: Optional[List[Dict[str, Any]]],
+    ) -> Tuple[Any, ...]:
+        turns = normalize_chat_history(chat_history, max_turns=6)
+        hist_key = tuple((t["role"], t["content"]) for t in turns)
+        return (hist_key, prompt.strip())
 
     def route(
         self,
@@ -135,7 +159,24 @@ class RouterEngine:
     ) -> RouteResponse:
         t0 = time.perf_counter()
 
-        probabilities = self.router.predict_probabilities(prompt, chat_history=chat_history)
+        probabilities: Optional[Dict[str, float]] = None
+        cache_key = self._make_cache_key(prompt, chat_history) if self.cache_size > 0 else None
+        if cache_key is not None:
+            with self._cache_lock:
+                cached = self._cache.get(cache_key)
+                if cached is not None:
+                    self._cache.move_to_end(cache_key)
+                    probabilities = dict(cached)
+
+        if probabilities is None:
+            probabilities = self.router.predict_probabilities(prompt, chat_history=chat_history)
+            if cache_key is not None:
+                with self._cache_lock:
+                    self._cache[cache_key] = dict(probabilities)
+                    self._cache.move_to_end(cache_key)
+                    while len(self._cache) > self.cache_size:
+                        self._cache.popitem(last=False)
+
         final_route, raw_prediction, final_confidence, fallback_triggered = apply_routing_guardrails(
             probabilities=probabilities,
             confidence_threshold=settings.CONFIDENCE_THRESHOLD,

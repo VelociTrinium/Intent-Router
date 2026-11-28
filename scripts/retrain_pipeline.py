@@ -62,10 +62,13 @@ def main():
     parser.add_argument("--epochs", type=float, default=3.0, help="LoRA fine-tuning epochs")
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--grad-accum", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=2e-4)
+    parser.add_argument("--lr", type=float, default=1.5e-4)
+    parser.add_argument("--weight-decay", type=float, default=0.02)
     parser.add_argument("--lora-r", type=int, default=16)
     parser.add_argument("--lora-alpha", type=int, default=-1, help="LoRA alpha (<=0 auto-sets 2 * lora_r)")
     parser.add_argument("--lora-dropout", type=float, default=0.10, help="LoRA dropout rate")
+    parser.add_argument("--use-rslora", action="store_true", help="Enable Rank-Stabilized LoRA scaling")
+    parser.add_argument("--neftune-noise-alpha", type=float, default=5.0, help="NEFTune embedding noise alpha (<=0 disables)")
     parser.add_argument("--class-label-smoothing", type=float, default=0.03, help="4-class label smoothing factor")
     parser.add_argument("--max-seq-length", type=int, default=512, help="Max sequence length for training")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
@@ -75,6 +78,7 @@ def main():
     parser.add_argument("--version", type=str, default="v1", help="Ollama model version tag (e.g. v1, 1.0.0; empty to omit)")
     parser.add_argument("--outtype", choices=["q8_0", "f16", "bf16", "f32"], default="q8_0", help="GGUF tensor precision")
     parser.add_argument("--num-ctx", type=int, default=768, help="Ollama KV context window size")
+    parser.add_argument("--num-thread", type=int, default=0, help="Ollama CPU threads (0=auto physical cores, <0=Ollama default)")
     parser.add_argument("--ollama-quantize", type=str, default=None, help="Optional `ollama create -q` target (e.g. q4_K_M)")
 
     # Evaluation & regression gate options
@@ -125,13 +129,17 @@ def main():
         "--batch-size", str(args.batch_size),
         "--grad-accum", str(args.grad_accum),
         "--lr", str(args.lr),
+        "--weight-decay", str(args.weight_decay),
         "--lora-r", str(args.lora_r),
         "--lora-alpha", str(args.lora_alpha),
         "--lora-dropout", str(args.lora_dropout),
+        "--neftune-noise-alpha", str(args.neftune_noise_alpha),
         "--class-label-smoothing", str(args.class_label_smoothing),
         "--max-seq-length", str(args.max_seq_length),
         "--seed", str(args.seed),
     ]
+    if args.use_rslora:
+        train_cmd.append("--use-rslora")
     _run_step(f"Step 2/4: Fine-tune fresh base model ({args.base_model})", train_cmd, dry_run=args.dry_run)
 
     # 3. Export GGUF & register in Ollama
@@ -140,6 +148,7 @@ def main():
         py, str(SCRIPTS_DIR / "export_ollama_gguf.py"),
         "--outtype", args.outtype,
         "--num-ctx", str(args.num_ctx),
+        "--num-thread", str(args.num_thread),
         "--model-name", args.model_name,
         "--version", args.version,
     ]

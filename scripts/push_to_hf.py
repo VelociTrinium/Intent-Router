@@ -24,11 +24,24 @@ DEFAULT_MERGED_DIR = BASE_DIR / "models" / "ollama_merged"
 DEFAULT_EVAL_REPORT = BASE_DIR / "models" / "evaluation_report.json"
 
 
-def build_hf_model_card(repo_id: str, gguf_files: List[Path], base_model: str = "Qwen/Qwen2.5-0.5B-Instruct") -> str:
+def build_hf_model_card(
+    repo_id: str,
+    gguf_files: List[Path],
+    base_model: str = "Qwen/Qwen2.5-0.5B-Instruct",
+    tag: Optional[str] = None,
+) -> str:
     file_list = "\n".join(f"- `{p.name}` ({p.stat().st_size / (1024 * 1024):.1f} MB)" for p in gguf_files)
     primary_gguf = gguf_files[0].name if gguf_files else "intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf"
+    inferred_ver = (tag or "").strip() or "v1"
+    if not tag:
+        import re
+        m = re.search(r"-(v\d+(?:\.\d+)*)-", primary_gguf)
+        if m:
+            inferred_ver = m.group(1)
     return f"""---
 license: apache-2.0
+language:
+- en
 base_model: {base_model}
 tags:
 - gguf
@@ -50,7 +63,7 @@ Fine-tuned 4-class NLP intent router (`GENERAL_CHAT`, `DB_READ`, `DB_WRITE`, `CL
 ## Quickstart with Ollama
 ```bash
 huggingface-cli download {repo_id} {primary_gguf} Modelfile --local-dir .
-ollama create intent-router-qwen2.5-0.5b-instruct:v1 -f Modelfile
+ollama create intent-router-qwen2.5-0.5b-instruct:{inferred_ver} -f Modelfile
 ```
 """
 
@@ -85,7 +98,7 @@ def main():
 
     card_path = args.gguf_dir / "README.md"
     if not card_path.exists():
-        card_path.write_text(build_hf_model_card(args.repo_id, gguf_files), encoding="utf-8")
+        card_path.write_text(build_hf_model_card(args.repo_id, gguf_files, tag=args.tag), encoding="utf-8")
     files_to_upload.append(card_path)
 
     print("[INFO] Files prepared for Hugging Face Hub:")

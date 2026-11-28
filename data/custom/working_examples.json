@@ -339,6 +339,48 @@
   },
 
   {
+    "_comment": "GENERAL_CHAT: Out-of-distribution / general-domain intuition preservation",
+    "prompt": "how do I calculate IRR and NPV in Excel?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "write a quick Python snippet to parse a CSV file into JSON",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "what's the current currency exchange rate between SGD and USD roughly?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "thanks for the help, talk to you tomorrow!",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "can you proofread this paragraph for grammar?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "why is my laptop running slow when opening large spreadsheets?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "what timezone is Hong Kong in compared to London?",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+  {
+    "prompt": "convert 25,000 sq ft into square meters",
+    "label": "GENERAL_CHAT",
+    "split": "train"
+  },
+
+  {
     "_comment": "Pinned novel test-split golden probes (never leaked into train)",
     "prompt": "is this pulling from a real database?",
     "label": "GENERAL_CHAT",
@@ -361,6 +403,16 @@
   },
   {
     "prompt": "What does DROP TABLE do in PostgreSQL?",
+    "label": "GENERAL_CHAT",
+    "split": "test"
+  },
+  {
+    "prompt": "how do you convert square meters to square feet?",
+    "label": "GENERAL_CHAT",
+    "split": "test"
+  },
+  {
+    "prompt": "write a short Python function to format phone numbers",
     "label": "GENERAL_CHAT",
     "split": "test"
   },

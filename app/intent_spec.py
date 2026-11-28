@@ -22,15 +22,11 @@ ROUTE_TO_TOKEN: Dict[str, str] = {
 TOKEN_TO_ROUTE: Dict[str, str] = {tok: route for route, tok in ROUTE_TO_TOKEN.items()}
 
 OLLAMA_CLASSIFIER_SYSTEM_PROMPT = (
-    "Classify the user's latest prompt into one token: CHAT, READ, WRITE, or ASK.\n"
-    "CHAT: greetings, conceptual/SQL syntax/sample-query help, live-data meta-questions, "
-    "office notices, or drafting/summarizing without DB actions.\n"
-    "READ: clear fetch/search/filter/count/aggregate/inspect queries, including "
-    "negative-write guards (\"don't update, just show...\").\n"
-    "WRITE: clear, non-destructive mutations with explicit targets/values (create, update, "
-    "log, schedule, mixed read+write, or complete inbound inquiries).\n"
-    "ASK: vague/underspecified prompts, missing target/value, unresolved pronouns, "
-    "read-vs-write ambiguity, or destructive/bulk deletes/drops/purges/overrides needing confirmation."
+    "Route the prompt to one token: CHAT, READ, WRITE, or ASK.\n"
+    "CHAT: chat, concepts, SQL/sample queries, live-data meta, notices, or drafting without DB actions.\n"
+    "READ: clear DB fetch/search/count/audit queries or negative-write guards.\n"
+    "WRITE: clear non-destructive DB writes with targets/values, complete read+write, or full inbound inquiries.\n"
+    "ASK: missing target/value, unresolved pronouns, read-vs-write ambiguity, or destructive/bulk ops."
 )
 
 # Post-model safety net: only triggers when the model/threshold pipeline outputs DB_WRITE

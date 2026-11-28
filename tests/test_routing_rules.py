@@ -359,16 +359,61 @@ def test_build_dataset_custom_priority_and_formats(tmp_path):
 
 
 def test_write_modelfile_chatml(tmp_path):
-    from scripts.export_ollama_gguf import write_modelfile
+    from scripts.export_ollama_gguf import resolve_num_thread, write_modelfile
 
     modelfile_path = tmp_path / "Modelfile"
-    write_modelfile(modelfile_path, "intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf")
+    write_modelfile(modelfile_path, "intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf", num_thread=6)
     content = modelfile_path.read_text(encoding="utf-8")
     assert "FROM ./intent-router-qwen2.5-0.5b-instruct-v1-q8_0.gguf" in content
     assert "<|im_start|>" in content
     assert "ASK:" in content
     assert "PARAMETER num_predict 1" in content
     assert "PARAMETER num_ctx 768" in content
+    assert "PARAMETER num_thread 6" in content
+    assert resolve_num_thread(-1) is None
+    assert resolve_num_thread(4) == 4
+
+
+def test_router_engine_lru_cache():
+    calls = {"count": 0}
+
+    class CountingRouter:
+        def predict_probabilities(self, prompt, chat_history=None):
+            calls["count"] += 1
+            return {
+                "GENERAL_CHAT": 0.03,
+                "DB_READ": 0.90,
+                "DB_WRITE": 0.04,
+                "CLARIFICATION_REQUIRED": 0.03,
+            }
+
+        def is_ready(self):
+            return True
+
+    engine = RouterEngine(router=CountingRouter(), cache_size=2)
+    r1 = engine.route("  Show all deals  ")
+    r2 = engine.route("Show all deals")
+    assert r1.route == "DB_READ" and r2.route == "DB_READ"
+    assert calls["count"] == 1
+
+    # Different chat_history misses cache
+    engine.route("Show all deals", chat_history=[{"role": "user", "content": "Hi"}])
+    assert calls["count"] == 2
+
+    # Third distinct key evicts oldest ("Show all deals" without history)
+    engine.route("Show contacts in Singapore")
+    assert calls["count"] == 3
+    engine.route("Show all deals")
+    assert calls["count"] == 4
+
+
+def test_hf_model_card_infers_version(tmp_path):
+    from scripts.push_to_hf import build_hf_model_card
+
+    gguf = tmp_path / "intent-router-qwen2.5-0.5b-instruct-v3-f16.gguf"
+    gguf.write_bytes(b"GGUF")
+    card = build_hf_model_card("user/repo", [gguf])
+    assert "intent-router-qwen2.5-0.5b-instruct:v3" in card
 
 
 def test_post_model_destructive_write_guard(test_engine):

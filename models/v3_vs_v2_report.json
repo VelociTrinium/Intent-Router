@@ -1,0 +1,374 @@
+{
+  "ollama": {
+    "model": "intent-router-qwen2.5-0.5b-instruct:v3",
+    "sample_count": 300,
+    "multi_turn_count": 48,
+    "multi_turn_accuracy": 1.0,
+    "accuracy": 0.9967,
+    "macro_f1": 0.9965,
+    "weighted_f1": 0.9967,
+    "db_write_recall": 0.9865,
+    "clarification_recall": 1.0,
+    "calibration_nll": 0.0363,
+    "calibration_brier": 0.0108,
+    "per_class": {
+      "GENERAL_CHAT": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 80
+      },
+      "DB_READ": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 76
+      },
+      "DB_WRITE": {
+        "precision": 1.0,
+        "recall": 0.9865,
+        "f1": 0.9932,
+        "support": 74
+      },
+      "CLARIFICATION_REQUIRED": {
+        "precision": 0.9859,
+        "recall": 1.0,
+        "f1": 0.9929,
+        "support": 70
+      }
+    },
+    "raw": {
+      "accuracy": 0.9933,
+      "macro_precision": 0.9933,
+      "macro_recall": 0.9931,
+      "macro_f1": 0.9932,
+      "weighted_f1": 0.9933,
+      "db_write_recall": 0.9865,
+      "clarification_recall": 0.9857,
+      "per_class": {
+        "GENERAL_CHAT": {
+          "precision": 0.9877,
+          "recall": 1.0,
+          "f1": 0.9938,
+          "support": 80
+        },
+        "DB_READ": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 76
+        },
+        "DB_WRITE": {
+          "precision": 1.0,
+          "recall": 0.9865,
+          "f1": 0.9932,
+          "support": 74
+        },
+        "CLARIFICATION_REQUIRED": {
+          "precision": 0.9857,
+          "recall": 0.9857,
+          "f1": 0.9857,
+          "support": 70
+        }
+      }
+    },
+    "cold_start_ms": 2807.92,
+    "latency_mean_ms": 163.57,
+    "latency_p50_ms": 130.94,
+    "latency_p95_ms": 337.46,
+    "num_errors": 1,
+    "errors": [
+      {
+        "index": 135,
+        "prompt": "add a note to amazon",
+        "has_history": false,
+        "ground_truth": "DB_WRITE",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.985,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0028,
+          "DB_READ": 0.0042,
+          "DB_WRITE": 0.008,
+          "CLARIFICATION_REQUIRED": 0.985
+        }
+      }
+    ]
+  },
+  "ollama_compare_intent-router-qwen2.5-0.5b-instruct:v2": {
+    "model": "intent-router-qwen2.5-0.5b-instruct:v2",
+    "sample_count": 300,
+    "multi_turn_count": 48,
+    "multi_turn_accuracy": 0.9792,
+    "accuracy": 0.9567,
+    "macro_f1": 0.9568,
+    "weighted_f1": 0.9561,
+    "db_write_recall": 1.0,
+    "clarification_recall": 1.0,
+    "calibration_nll": 0.358,
+    "calibration_brier": 0.0802,
+    "per_class": {
+      "GENERAL_CHAT": {
+        "precision": 1.0,
+        "recall": 0.8625,
+        "f1": 0.9262,
+        "support": 80
+      },
+      "DB_READ": {
+        "precision": 0.925,
+        "recall": 0.9737,
+        "f1": 0.9487,
+        "support": 76
+      },
+      "DB_WRITE": {
+        "precision": 0.9867,
+        "recall": 1.0,
+        "f1": 0.9933,
+        "support": 74
+      },
+      "CLARIFICATION_REQUIRED": {
+        "precision": 0.9211,
+        "recall": 1.0,
+        "f1": 0.9589,
+        "support": 70
+      }
+    },
+    "raw": {
+      "accuracy": 0.9567,
+      "macro_precision": 0.9582,
+      "macro_recall": 0.959,
+      "macro_f1": 0.9568,
+      "weighted_f1": 0.9561,
+      "db_write_recall": 1.0,
+      "clarification_recall": 1.0,
+      "per_class": {
+        "GENERAL_CHAT": {
+          "precision": 1.0,
+          "recall": 0.8625,
+          "f1": 0.9262,
+          "support": 80
+        },
+        "DB_READ": {
+          "precision": 0.925,
+          "recall": 0.9737,
+          "f1": 0.9487,
+          "support": 76
+        },
+        "DB_WRITE": {
+          "precision": 0.9867,
+          "recall": 1.0,
+          "f1": 0.9933,
+          "support": 74
+        },
+        "CLARIFICATION_REQUIRED": {
+          "precision": 0.9211,
+          "recall": 1.0,
+          "f1": 0.9589,
+          "support": 70
+        }
+      }
+    },
+    "cold_start_ms": 2199.05,
+    "latency_mean_ms": 187.14,
+    "latency_p50_ms": 150.12,
+    "latency_p95_ms": 398.8,
+    "num_errors": 13,
+    "errors": [
+      {
+        "index": 17,
+        "prompt": "what time is it in london right now",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 0.9886,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0114,
+          "DB_READ": 0.9886,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 18,
+        "prompt": "hey quick thing",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.9925,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0075,
+          "DB_READ": 0.0,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.9925
+        }
+      },
+      {
+        "index": 48,
+        "prompt": "see ya",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.6962,
+        "probabilities": {
+          "GENERAL_CHAT": 0.3036,
+          "DB_READ": 0.0002,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.6962
+        }
+      },
+      {
+        "index": 79,
+        "prompt": "Can you write an example SQL query to find duplicate email addresses in a contacts table?",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 1.0,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0,
+          "DB_READ": 1.0,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 160,
+        "prompt": "how's the weather in downtown new york today",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 0.9999,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0001,
+          "DB_READ": 0.9999,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 169,
+        "prompt": "draft a quick recap of our H1 leasing activity",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 0.9983,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0017,
+          "DB_READ": 0.9983,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 185,
+        "prompt": "can you write a sample SQL query to find duplicates by email",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 1.0,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0,
+          "DB_READ": 1.0,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 204,
+        "prompt": "appreciate it",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.8803,
+        "probabilities": {
+          "GENERAL_CHAT": 0.1197,
+          "DB_READ": 0.0,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.8803
+        }
+      },
+      {
+        "index": 218,
+        "prompt": "Can u pull the account mgr for HSBC in HK pls",
+        "has_history": false,
+        "ground_truth": "DB_READ",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.9903,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0,
+          "DB_READ": 0.0095,
+          "DB_WRITE": 0.0002,
+          "CLARIFICATION_REQUIRED": 0.9903
+        }
+      },
+      {
+        "index": 228,
+        "prompt": "circulate this notice: office kitchen will be renovated next week",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_WRITE",
+        "predicted": "DB_WRITE",
+        "confidence": 0.9295,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0688,
+          "DB_READ": 0.0005,
+          "DB_WRITE": 0.9295,
+          "CLARIFICATION_REQUIRED": 0.0012
+        }
+      },
+      {
+        "index": 232,
+        "prompt": "is this pulling from a real database?",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.9836,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0052,
+          "DB_READ": 0.0112,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.9836
+        }
+      },
+      {
+        "index": 236,
+        "prompt": "Can you write an example SQL query using a CASE statement to segment pursuits by deal size categories?",
+        "has_history": false,
+        "ground_truth": "GENERAL_CHAT",
+        "raw_prediction": "DB_READ",
+        "predicted": "DB_READ",
+        "confidence": 0.9807,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0071,
+          "DB_READ": 0.9807,
+          "DB_WRITE": 0.0122,
+          "CLARIFICATION_REQUIRED": 0.0
+        }
+      },
+      {
+        "index": 299,
+        "prompt": "Query those pursuits first to verify what will be affected.",
+        "has_history": true,
+        "ground_truth": "DB_READ",
+        "raw_prediction": "CLARIFICATION_REQUIRED",
+        "predicted": "CLARIFICATION_REQUIRED",
+        "confidence": 0.9978,
+        "probabilities": {
+          "GENERAL_CHAT": 0.0,
+          "DB_READ": 0.0022,
+          "DB_WRITE": 0.0,
+          "CLARIFICATION_REQUIRED": 0.9978
+        }
+      }
+    ]
+  }
+}

@@ -282,11 +282,13 @@ def main():
     parser.add_argument("--epochs", type=float, default=3.0, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=8, help="Per-device batch size")
     parser.add_argument("--grad-accum", type=int, default=2, help="Gradient accumulation steps")
-    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
-    parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay")
+    parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate (gentle default preserves pretrained intuition)")
+    parser.add_argument("--weight-decay", type=float, default=0.02, help="AdamW weight decay")
     parser.add_argument("--lora-r", type=int, default=16, help="LoRA rank")
     parser.add_argument("--lora-alpha", type=int, default=-1, help="LoRA alpha (<=0 auto-sets 2 * lora_r)")
     parser.add_argument("--lora-dropout", type=float, default=0.10, help="LoRA dropout rate")
+    parser.add_argument("--use-rslora", action="store_true", help="Enable Rank-Stabilized LoRA scaling (alpha / sqrt(r))")
+    parser.add_argument("--neftune-noise-alpha", type=float, default=5.0, help="NEFTune embedding noise alpha during training (<=0 disables)")
     parser.add_argument("--class-label-smoothing", type=float, default=0.03, help="Label smoothing over the 4 valid classes only")
     parser.add_argument("--vocab-loss-weight", type=float, default=0.40, help="Weight on full-vocab CE anchor loss vs 4-class CE loss")
     parser.add_argument("--max-seq-length", type=int, default=512, help="Max sequence length (protects multi-turn history + system prompt)")
@@ -359,6 +361,7 @@ def main():
         r=args.lora_r,
         lora_alpha=effective_alpha,
         lora_dropout=args.lora_dropout,
+        use_rslora=args.use_rslora,
         bias="none",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     )
@@ -431,6 +434,8 @@ def main():
                 tokenizer.save_pretrained(str(args.lora_dir))
                 print(f"[INFO] Saved new best LoRA adapter (score={score:.4f}) to {args.lora_dir}")
 
+    neftune_alpha = args.neftune_noise_alpha if args.neftune_noise_alpha > 0 else None
+
     training_args = TrainingArguments(
         output_dir=str(BASE_DIR / "checkpoints" / "ollama_lora_runs"),
         num_train_epochs=args.epochs,
@@ -441,6 +446,7 @@ def main():
         weight_decay=args.weight_decay,
         warmup_steps=max(4, int(0.08 * (len(train_ds) // max(1, args.batch_size * args.grad_accum)) * args.epochs)),
         lr_scheduler_type="cosine",
+        neftune_noise_alpha=neftune_alpha,
         logging_steps=10,
         save_strategy="no",
         eval_strategy="no",
@@ -512,6 +518,8 @@ def main():
         "lora_r": args.lora_r,
         "lora_alpha": effective_alpha,
         "lora_dropout": args.lora_dropout,
+        "use_rslora": args.use_rslora,
+        "neftune_noise_alpha": neftune_alpha,
         "class_label_smoothing": args.class_label_smoothing,
         "vocab_loss_weight": args.vocab_loss_weight,
         "seed": args.seed,

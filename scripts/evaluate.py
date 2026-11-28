@@ -112,7 +112,7 @@ def evaluate_ollama_model(
     print(f"EVALUATING OLLAMA MODEL: {display_name}")
     print("#" * 65)
 
-    engine = RouterEngine(ollama_model_override=target_model)
+    engine = RouterEngine(ollama_model_override=target_model, cache_size=0)
     if not engine.router.is_ready():
         raise RuntimeError(
             f"Ollama model '{target_model}' is not ready. "
